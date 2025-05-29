@@ -1,0 +1,38 @@
+version: '3'
+
+volumes:
+  pg_data_production:
+  static_production:
+  media_production:
+
+services:
+  db:
+    image: postgres:13.10
+    env_file: .env
+    volumes:
+      - pg_data_production:/var/lib/postgresql/data
+
+  backend:
+    image: yulia605/foodgram_backend
+    env_file: .env
+    volumes:
+      - static_production:/backend_static
+      - media_production:/app/media/
+    depends_on:
+      - db
+
+  frontend:
+    image: yulia605/foodgram_frontend
+    env_file: .env
+    command: cp -r /app/build/. /frontend_static/
+    volumes:
+      - static_production:/frontend_static
+
+  gateway:
+    image: yulia605/foodgram_gateway
+    env_file: .env
+    volumes:
+      - static_production:/staticfiles/
+      - media_production:/app/media/    
+    ports:
+      - 7000:80
