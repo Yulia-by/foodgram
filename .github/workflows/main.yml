@@ -29,7 +29,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip 
-        pip install flake8==6.0.0 flake8-isort==6.0.0
+        pip install flake8==6.0.0
         pip install -r ./backend/requirements.txt 
     - name: Test with flake8 and django tests
       env:
@@ -83,7 +83,7 @@ jobs:
     - name: Test frontend
       run: |
         cd frontend/
-        
+
   build_frontend_and_push_to_docker_hub:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     name: Push frontend Docker image to DockerHub
