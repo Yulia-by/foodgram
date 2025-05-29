@@ -4,41 +4,36 @@ from django.shortcuts import HttpResponse
 
 from rest_framework import status, viewsets, permissions
 from rest_framework.decorators import action
-from rest_framework.permissions import (
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly
-)
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 
-from djoser.views import UserViewSet
-
-from recipes.models import (
-    Tag,
-    Ingredient,
-    Recipe,
-    ShoppingCart,
-    Favorite,
-    Subscription
-)
-from api.utils import create_object, delete_object
 from api.filters import RecipeFilter
 from api.permissions import IsAuthorOrReadOnly
 from api.pagination import CustomLimitPagination
 from api.serializers import (
     AvatarSerializer,
-    TagSerializer,
-    UserSerializer,
+    FavoriteSerializer,
     IngredientSerializer,
+    RecipeFavoriteSerializer,
     RecipeGetSerializer,
     RecipeSerializer,
-    RecipeFavoriteSerializer,
-    FavoriteSerializer,
     ShoppingCartSerializer,
     SubscriptionReadSerializer,
-    SubscriptionSerializer
+    SubscriptionSerializer,
+    TagSerializer,
+    UserSerializer,
 )
-
+from api.utils import create_object, delete_object
+from djoser.views import UserViewSet
+from recipes.models import (
+    Favorite,
+    Ingredient,
+    Recipe,
+    ShoppingCart,
+    Subscription,
+    Tag
+)
 from users.models import User
 
 
