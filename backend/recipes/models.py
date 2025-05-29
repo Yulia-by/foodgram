@@ -38,7 +38,8 @@ class Ingredient(models.Model):
     def __str__(self) -> str:
         return f'{self.name} - {self.measurement_unit}'
 
-class Tag(models.Model):   
+
+class Tag(models.Model):
     name = models.CharField(
         'Тэг',
         max_length=MAX_LENGTH_TAG_NAME,
@@ -58,6 +59,7 @@ class Tag(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
 
 class Recipe(models.Model):
     name = models.CharField(
@@ -103,6 +105,7 @@ class Recipe(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
 
 class IngredientRecipe(models.Model):
     """ Количество ингридиентов в рецепте блюда.
@@ -177,6 +180,7 @@ class Favorite(models.Model):
     def __str__(self) -> str:
         return f'{self.user}  {self.recipe}'
 
+
 class ShoppingCart(models.Model):
     """ Список покупок. """
 
@@ -244,5 +248,3 @@ class Subscription(models.Model):
     def __str__(self) -> str:
         """Строковое представление объекта модели."""
         return f'{self.user} подписан на {self.author}'
-
-
