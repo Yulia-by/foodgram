@@ -31,6 +31,6 @@ services:
     env_file: .env
     volumes:
       - static_production:/staticfiles/
-      - media_production:/app/media/    
+      - media_production:/app/media/
     ports:
       - 7000:80
