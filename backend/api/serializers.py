@@ -103,7 +103,7 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
 
 class TagSerializer(serializers.ModelSerializer):
     """ Сериализатор для модели Tag. """
-    
+
     id = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
