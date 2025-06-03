@@ -39,7 +39,8 @@ from users.models import User
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
-    """ Вьюсет для модели Tag """
+    """ Вьюсет для модели Tag. """
+
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     pagination_class = None
@@ -48,6 +49,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     """ Вьюсет для модели Ingredient. """
+
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     pagination_class = None
@@ -62,7 +64,8 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    """ Вывод для модели Recipe. """
+    """ Вьюсет для модели Recipe. """
+
     pagination_class = CustomLimitPagination
     permission_classes = (IsAuthorOrReadOnly,
                           permissions.IsAuthenticatedOrReadOnly,)
@@ -78,7 +81,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return serializer.save(author=self.request.user)
 
     def get_serializer_class(self):
-        """ Метод вибирает сериализатор. """
         if self.request.method in permissions.SAFE_METHODS:
             return RecipeGetSerializer
         return RecipeSerializer
@@ -97,8 +99,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, pk):
-        """Добавить или удалить рецепт в список "Избранное."""
-
         if request.method == 'POST':
             serializer = create_object(
                 request,
@@ -116,8 +116,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post', 'delete'])
     def shopping_cart(self, request, pk):
-        """ Добавить или удалить ингредиенты рецепта в "Корзину покупок" """
-
         if request.method == 'POST':
             serializer = create_object(
                 request,
@@ -136,8 +134,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'],
             permission_classes=(permissions.IsAuthenticated,))
     def download_shopping_cart(self, request):
-        """ Скачать файл со списком покупок. """
-
         ingredient_lst = ShoppingCart.objects.filter(
             user=request.user
         ).values_list(
@@ -160,6 +156,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 class CustomUserViewSet(UserViewSet):
     """ Вьюсет для модели User. """
+
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = CustomLimitPagination
@@ -196,7 +193,6 @@ class CustomUserViewSet(UserViewSet):
         methods=['post', 'delete'],
     )
     def subscribe(self, request, id):
-        """ Метод создает/удаляет связь между пользователями. """
         if request.method == 'POST':
             serializer = create_object(
                 request,
@@ -217,7 +213,6 @@ class CustomUserViewSet(UserViewSet):
         methods=['get'],
     )
     def subscriptions(self, request):
-        """ Список подписок у пользователя. """
         user = request.user
         authors = User.objects.filter(subscribing__user=user)
 

@@ -17,6 +17,8 @@ from foodgram.constants import (
 
 
 class Ingredient(models.Model):
+    """ Модель Ingredient. """
+
     name = models.CharField(
         'Название ингридиента',
         max_length=MAX_LENGTH_INGREDIENT_NAME,
@@ -40,6 +42,8 @@ class Ingredient(models.Model):
 
 
 class Tag(models.Model):
+    """ Модель Tag. """
+
     name = models.CharField(
         'Тэг',
         max_length=MAX_LENGTH_TAG_NAME,
@@ -62,6 +66,8 @@ class Tag(models.Model):
 
 
 class Recipe(models.Model):
+    """ Модель Recipe. """
+
     name = models.CharField(
         'Название рецепта',
         max_length=MAX_LENGTH_RECIPE_NAME
@@ -108,8 +114,8 @@ class Recipe(models.Model):
 
 
 class IngredientRecipe(models.Model):
-    """ Количество ингридиентов в рецепте блюда.
-        Вспомогательная модель.
+    """ Вспомогательная модель.
+    Количество ингридиентов в рецепте блюда.
     Связывает модели Recipe и Ingredient.
     """
     recipe = models.ForeignKey(
@@ -141,13 +147,11 @@ class IngredientRecipe(models.Model):
         )
 
     def __str__(self) -> str:
-        """Строковое представление объекта модели."""
         return f'{self.amount} {self.ingredient}'
 
 
 class Favorite(models.Model):
     """ Избранные рецепты.
-
     Связывает модели Recipe и  User.
     """
     user = models.ForeignKey(
@@ -246,5 +250,4 @@ class Subscription(models.Model):
         )
 
     def __str__(self) -> str:
-        """Строковое представление объекта модели."""
         return f'{self.user} подписан на {self.author}'

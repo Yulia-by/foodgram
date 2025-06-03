@@ -7,7 +7,7 @@ from recipes.models import Recipe, Subscription
 
 def create_object(request, pk, serializer_in, serializer_out, model):
     """
-    Создания связей в Favorite, ShoppingCart, Subscription.
+    Создает связи в Favorite, ShoppingCart, Subscription.
     """
     if request.user.is_anonymous:
         return Response(status=status.HTTP_401_UNAUTHORIZED)
@@ -30,7 +30,7 @@ def create_object(request, pk, serializer_in, serializer_out, model):
 
 def delete_object(request, pk, model_object, delete_object):
     """
-    Удаления связей в Favorite, ShoppingCart, Subscription.
+    Удаляет связи в Favorite, ShoppingCart, Subscription.
     """
     user = request.user
     if user.is_anonymous:

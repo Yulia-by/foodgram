@@ -11,7 +11,7 @@ from foodgram.constants import (
 
 
 class User(AbstractUser):
-    """Переопределяем модель User"""
+    """ Переопределяем модель User. """
 
     username = models.CharField(
         'Пользователь',
@@ -51,5 +51,4 @@ class User(AbstractUser):
         ordering = ('username',)
 
     def __str__(self) -> str:
-        """Строковое представление объекта модели."""
         return self.username

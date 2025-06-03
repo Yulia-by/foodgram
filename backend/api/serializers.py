@@ -17,6 +17,8 @@ from users.models import User
 
 
 class UserSerializer(UserSerializer):
+    """ Сериализатор для модели User. """
+
     is_subscribed = serializers.SerializerMethodField()
     avatar = Base64ImageField(required=False)
 
@@ -40,6 +42,8 @@ class UserSerializer(UserSerializer):
 
 
 class AvatarSerializer(serializers.ModelSerializer):
+    """ Сериализатор для аватара пользователя. """
+
     avatar = Base64ImageField()
 
     class Meta:
@@ -48,6 +52,8 @@ class AvatarSerializer(serializers.ModelSerializer):
 
 
 class IngredientSerializer(serializers.ModelSerializer):
+    """ Сериализатор для модели Ingredient. """
+
     id = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
@@ -65,6 +71,8 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class IngredientRecipeGetSerializer(serializers.ModelSerializer):
+    """ Сериализатор для модели IngredientRecipe при GET запросах. """
+
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
     measurement_unit = serializers.ReadOnlyField(
@@ -81,6 +89,8 @@ class IngredientRecipeGetSerializer(serializers.ModelSerializer):
 
 
 class IngredientRecipeSerializer(serializers.ModelSerializer):
+    """ Сериализатор для модели IngredientRecipe при небезопасных запросах. """
+
     id = serializers.IntegerField()
 
     class Meta:
@@ -92,7 +102,8 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
-    """ Сериализатор для модели Tag."""
+    """ Сериализатор для модели Tag. """
+    
     id = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
@@ -105,7 +116,8 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class RecipeGetSerializer(serializers.ModelSerializer):
-    """ Сериализатор для модели Recipe при GET запросах."""
+    """ Сериализатор для модели Recipe при GET запросах. """
+
     tags = TagSerializer(many=True, read_only=True)
     author = UserSerializer(read_only=True)
     image = Base64ImageField(required=False, allow_null=True)
@@ -131,13 +143,13 @@ class RecipeGetSerializer(serializers.ModelSerializer):
         )
 
     def get_is_favorited(self, obj):
-        """Метод для поля is_favorited."""
+        """ Метод для is_favorited. """
         user = self.context.get('request').user
         return (user.is_authenticated
                 and user.favorites.filter(recipe=obj).exists())
 
     def get_is_in_shopping_cart(self, obj):
-        """Метод для поля is_in_shopping_cart."""
+        """ Метод для is_in_shopping_cart. """
         user = self.context.get('request').user
         return (user.is_authenticated
                 and user.cart.filter(recipe=obj).exists())
@@ -202,7 +214,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         return data
 
     def create_ingredients(self, ingredients, recipe):
-        """ Метод создает рецепт с ингридиентами. """
+        """ Метод для создания рецепта с ингридиентами. """
+
         IngredientRecipe.objects.bulk_create(
             IngredientRecipe(
                 recipe=recipe,
@@ -249,7 +262,7 @@ class RecipeFavoriteSerializer(serializers.ModelSerializer):
 
 
 class FavoriteAndShoppingCartSerializerBase(serializers.ModelSerializer):
-    """  Сериализатор для модели Favorite. """
+    """ Сериализатор для модели Favorite. """
 
     class Meta:
         model = Favorite
@@ -267,8 +280,8 @@ class FavoriteAndShoppingCartSerializerBase(serializers.ModelSerializer):
 
 
 class FavoriteSerializer(FavoriteAndShoppingCartSerializerBase):
-    """  Сериализатор для модели Favorite.
-    Для связи связей избранных рецептов пользователя.
+    """ Сериализатор для модели Favorite.
+    Для связи избранных рецептов пользователя между собой.
     """
 
     class Meta(FavoriteAndShoppingCartSerializerBase.Meta):
@@ -300,7 +313,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionReadSerializer(UserSerializer):
-    """ Сериализатор для модели User для полей подписок."""
+    """ Сериализатор для модели User для полей подписок. """
 
     recipes = RecipeFavoriteSerializer(many=True, read_only=True)
     recipes_count = serializers.SerializerMethodField(read_only=True)
