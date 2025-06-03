@@ -1,10 +1,11 @@
 from django.db.models import Sum
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import HttpResponse
 
 from rest_framework import status, viewsets, permissions
 from rest_framework.decorators import action
-from rest_framework.permissions import (IsAuthenticated,
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
@@ -81,6 +82,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.request.method in permissions.SAFE_METHODS:
             return RecipeGetSerializer
         return RecipeSerializer
+    
+    @action(
+        detail=True,
+        methods=['GET'],
+        permission_classes=[AllowAny],
+        url_path='get-link',
+        url_name='get-link',
+    )
+    def get_link(self, request, pk=None):
+        _ = get_object_or_404(Recipe, pk=pk)
+        url = request.build_absolute_uri(f'/recipes/{pk}/')
+        return Response({'short-link': url}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, pk):
