@@ -82,7 +82,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.request.method in permissions.SAFE_METHODS:
             return RecipeGetSerializer
         return RecipeSerializer
-    
+
     @action(
         detail=True,
         methods=['GET'],
