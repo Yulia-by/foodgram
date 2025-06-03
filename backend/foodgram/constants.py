@@ -12,5 +12,5 @@ MESSAGE_COOKING_TIME = 'Время приготовления не может б
 INGREDIENT_AMOUNT_MIN = 1
 MESSAGE_AMOUNT = 'Количество должно быть равно хотя бы одному.'
 INLINE_EXTRA = 0
-PAGE_SIZE = 6
 MIN_NUM = 1
+PAGE_SIZE = 6
