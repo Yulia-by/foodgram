@@ -66,7 +66,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
 
 
-class RecipeViewSet(ModelViewSet, FavoriteMixin, ShoppingCartMixin):
+class RecipeViewSet(viewsets.ModelViewSet, FavoriteMixin, ShoppingCartMixin):
     """ Вьюсет для модели Recipe. """
 
     pagination_class = CustomLimitPagination
@@ -123,7 +123,7 @@ class RecipeViewSet(ModelViewSet, FavoriteMixin, ShoppingCartMixin):
         response = HttpResponse("\n".join(shopping_list),
                                 content_type="text/plain")
         response["Content-Disposition"] = 'attachment;' \
-        'filename="shopping_list.txt"'
+            'filename="shopping_list.txt"'
         return response
 
     # Настройка миксинов
