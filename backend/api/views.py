@@ -107,8 +107,8 @@ class RecipeViewSet(ModelViewSet, FavoriteMixin, ShoppingCartMixin):
     @action(detail=False, methods=["get"],
             permission_classes=(IsAuthenticatedOrReadOnly,))
     def download_shopping_cart(self, request):
-        ingredient_lst = 
-        ShoppingCart.objects.filter(user=request.user).values_list(
+        ingredient_lst = ShoppingCart.objects.filter(
+            user=request.user).values_list(
             "recipe_id__ingredients__name",
             "recipe_id__ingredients__measurement_unit",
             Sum("recipe_id__ingredients__amount_ingredients__amount"),

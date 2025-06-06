@@ -1,4 +1,8 @@
-from rest_framework.mixins import CreateModelMixin, DestroyModelMixin
+from rest_framework.mixins import (
+    CreateModelMixin,
+    DestroyModelMixin,
+    UpdateModelMixin,
+)
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -14,7 +18,8 @@ class FavoriteMixin(CreateModelMixin, DestroyModelMixin):
 
     def remove_from_favorites(self, request, pk):
         """Удаление рецепта из избранного"""
-        favorite = self.favorite_model.objects.get(user=request.user, recipe=pk)
+        favorite = self.favorite_model.objects.get(
+            user=request.user, recipe=pk)
         favorite.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
