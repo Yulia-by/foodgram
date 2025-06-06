@@ -12,25 +12,37 @@ JSON_FILE_PATH = os.path.join(DATA_DIR, 'ingredients.json')
 CSV_FILE_PATH = os.path.join(DATA_DIR, 'ingredients.csv')
 
 
-class Command(BaseCommand):
-    help = 'Import ingredients data from JSON and CSV files'
+def load_ingredients(file_path):
+    """Общая функция загрузки ингредиентов. """
+    if file_path.suffix == '.json':
+        with open(file_path, encoding='utf-8') as f:
+            data = json.load(f)
+            return [(item["name"], item["measurement_unit"]) for item in data]
 
-    def handle(self, *args, **options):
-        with open(JSON_FILE_PATH, 'r') as json_file:
-            ingredients_json = json.load(json_file)
-            for ingredient_data in ingredients_json:
-                Ingredient.objects.get_or_create(
-                    name=ingredient_data['name'],
-                    measurement_unit=ingredient_data['measurement_unit']
-                )
-
-        with open(CSV_FILE_PATH, 'r') as csv_file:
-            reader = csv.reader(csv_file)
+    elif file_path.suffix == '.csv':
+        with open(file_path, newline='', encoding='utf-8') as f:
+            reader = csv.reader(f)
             next(reader)
-            for row in reader:
-                Ingredient.objects.get_or_create(
-                    name=row[0],
-                    measurement_unit=row[1]
-                )
+            return list(reader)
 
-        self.stdout.write(self.style.SUCCESS('Data imported successfully'))
+    else:
+        raise ValueError("Unsupported file format")
+
+
+class Command(BaseCommand):
+    help = 'Импортирование данных ингредиентов из JSON/CSV-файлов.'
+
+    def handle(self, *args, **kwargs):
+        try:
+            ingredients_from_json = load_ingredients(JSON_FILE_PATH)
+            ingredients_from_csv = load_ingredients(CSV_FILE_PATH)
+            all_ingredients = set(ingredients_from_json + ingredients_from_csv)
+            for name, unit in all_ingredients:
+                Ingredient.objects.get_or_create(name=name,
+                                                 measurement_unit=unit)
+
+            self.stdout.write(self.style.SUCCESS(
+                'Данные успешно импортированы'))
+
+        except Exception as e:
+            self.stderr.write(self.style.ERROR(str(e)))

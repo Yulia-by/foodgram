@@ -81,6 +81,7 @@ sudo docker compose -f docker-compose.production.yml exec backend python manage.
 ```bash
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py import_ingredients
 ```
+Перед запуском приложения настройте переменные окружения (пример в файле .env_example).
 
 ## Workflow для обновления проекта на сервере:
 

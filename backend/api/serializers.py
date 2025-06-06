@@ -4,6 +4,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 from djoser.serializers import UserSerializer
 
+from foodgram.constants import PAGE_SIZE
 from recipes.models import (
     Favorite,
     Ingredient,
@@ -35,10 +36,10 @@ class UserSerializer(UserSerializer):
         )
 
     def get_is_subscribed(self, obj):
-        user = self.context.get('request').user
-        if user is None or user.is_anonymous:
+        request_user = self.context['request'].user
+        if not request_user.is_authenticated:
             return False
-        return Subscription.objects.filter(user=user, author=obj).exists()
+        return request_user.subscriber.filter(author=obj).exists()
 
 
 class AvatarSerializer(serializers.ModelSerializer):
@@ -54,7 +55,7 @@ class AvatarSerializer(serializers.ModelSerializer):
 class IngredientSerializer(serializers.ModelSerializer):
     """ Сериализатор для модели Ingredient. """
 
-    id = serializers.PrimaryKeyRelatedField(read_only=True)
+    #id = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Ingredient
@@ -91,7 +92,11 @@ class IngredientRecipeGetSerializer(serializers.ModelSerializer):
 class IngredientRecipeSerializer(serializers.ModelSerializer):
     """ Сериализатор для модели IngredientRecipe при небезопасных запросах. """
 
-    id = serializers.IntegerField()
+    #id = serializers.IntegerField()
+    ingredient_id = serializers.PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.all(),
+        source='ingredient'
+    )
 
     class Meta:
         model = IngredientRecipe
@@ -248,7 +253,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         return RecipeGetSerializer(instance, context=context).data
 
 
-class RecipeFavoriteSerializer(serializers.ModelSerializer):
+class ShortRecipeSerializer(serializers.ModelSerializer):
     """ Сериализатор для Favorite и ShoppingCart. """
 
     class Meta:
@@ -315,14 +320,25 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 class SubscriptionReadSerializer(UserSerializer):
     """ Сериализатор для модели User для полей подписок. """
 
-    recipes = RecipeFavoriteSerializer(many=True, read_only=True)
+    recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField(read_only=True)
 
     class Meta(UserSerializer.Meta):
         fields = UserSerializer.Meta.fields + ('recipes', 'recipes_count')
 
+    def get_recipes(self, obj):
+        request = self.context.get('request')
+        limit = request.GET.get('recipes_limit', PAGE_SIZE)
+        try:
+            limit = int(limit)
+        except ValueError:
+            pass
+        return ShortRecipeSerializer(
+            Recipe.objects.filter(author=obj)[:limit],
+            many=True,
+            context={'request': request},
+        ).data
+
     def get_recipes_count(self, obj):
-        """ Вычисляет колличество рецептов у автора рецептов,
-        на которых он подписан.
-        """
+        """ Подсчет общего числа рецептов, связанных с данным пользователем. """
         return obj.recipes.count()

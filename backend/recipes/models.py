@@ -36,6 +36,11 @@ class Ingredient(models.Model):
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
         ordering = ('name',)
+        constraints = (
+            models.UniqueConstraint(
+                fields=('name', 'measurement_unit',),
+                name='unique_ingredient_name_and_measurement'),
+        )
 
     def __str__(self) -> str:
         return f'{self.name} - {self.measurement_unit}'
