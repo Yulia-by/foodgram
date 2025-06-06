@@ -9,7 +9,7 @@ from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
-from api.filters import RecipeFilter
+from api.filters import IngredientFilter, RecipeFilter
 from api.permissions import IsAuthorOrReadOnly
 from api.pagination import CustomLimitPagination
 from api.serializers import (
@@ -50,10 +50,11 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     """ Вьюсет для модели Ingredient. """
 
+    permission_classes = (IsAuthorOrReadOnly,)
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    pagination_class = None
-    permission_classes = (IsAuthorOrReadOnly,)
+    filter_backends = (IngredientFilter,)
+    search_fields = ('^name',)
 
     def get_queryset(self):
         queryset = Ingredient.objects.all()
@@ -66,16 +67,13 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     """ Вьюсет для модели Recipe. """
 
+    queryset = Recipe.objects.select_related(
+        'author').prefetch_related('tags', 'amount_ingredients__ingredient')
     pagination_class = CustomLimitPagination
     permission_classes = (IsAuthorOrReadOnly,
                           permissions.IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
-
-    def get_queryset(self):
-        return (Recipe.objects.prefetch_related(
-                'amount_ingredients__ingredient',
-                'tags').all())
 
     def perform_create(self, serializer):
         return serializer.save(author=self.request.user)
@@ -151,7 +149,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return response
 
 
-class CustomUserViewSet(UserViewSet):
+class UserViewSet(UserViewSet):
     """ Вьюсет для модели User. """
 
     queryset = User.objects.all()

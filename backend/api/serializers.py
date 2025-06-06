@@ -1,10 +1,16 @@
-from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 from djoser.serializers import UserSerializer
 
-from foodgram.constants import PAGE_SIZE
+from foodgram.constants import (
+    PAGE_SIZE,
+    MESSAGE_INGREDIENT_AMOUNT,
+    COOKING_TIME_MIN,
+    MESSAGE_COOKING_TIME,
+    MESSAGE_TAGS_UNIQUE,
+    MESSAGE_INGREDIENT_UNIQUE
+)
 from recipes.models import (
     Favorite,
     Ingredient,
@@ -88,7 +94,9 @@ class IngredientRecipeGetSerializer(serializers.ModelSerializer):
 
 
 class IngredientRecipeSerializer(serializers.ModelSerializer):
-    """ Сериализатор для модели IngredientRecipe при небезопасных запросах. """
+    """ Сериализатор для модели IngredientRecipe
+    при небезопасных запросах.
+    """
 
     ingredient_id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
@@ -101,6 +109,10 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
             'id',
             'amount'
         )
+    def validate_amount(self, value):
+        if value <= 0:
+            raise serializers.ValidationError(MESSAGE_INGREDIENT_AMOUNT)
+        return value
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -159,6 +171,7 @@ class RecipeGetSerializer(serializers.ModelSerializer):
 
 class RecipeSerializer(serializers.ModelSerializer):
     """ Сериализатор для модели Recipe при небезопасных запросах. """
+
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
         many=True
@@ -181,57 +194,37 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
 
     def validate_cooking_time(self, cooking_time):
-        if int(cooking_time) < 1:
-            raise serializers.ValidationError(
-                'Время готовки не может быть меньше минуты')
+        if int(cooking_time) < COOKING_TIME_MIN:
+            raise serializers.ValidationError(MESSAGE_COOKING_TIME)
         return cooking_time
 
-    def validate(self, data):
-        ingredients = self.initial_data.get('ingredients')
-        if not ingredients:
-            raise serializers.ValidationError({
-                'ingredients': 'Нужен хоть один ингридиент для рецепта'})
+    def validate_tags(self, tags):
+        if len(tags) != len(set(tags)):
+            raise serializers.ValidationError(MESSAGE_TAGS_UNIQUE)
+        return tags
 
-        tags = self.initial_data.get('tags')
-        if not tags:
-            raise serializers.ValidationError('Не указаны тэги')
-
-        if len(data['tags']) > len(set(data['tags'])):
-            raise serializers.ValidationError('Теги не могут повторяться!')
-
-        ingredient_list = []
-        for ingredient_item in ingredients:
-            ingredient = get_object_or_404(Ingredient,
-                                           id=ingredient_item['id'])
-            if ingredient in ingredient_list:
-                raise serializers.ValidationError('Ингридиенты должны '
-                                                  'быть уникальными')
-            ingredient_list.append(ingredient)
-            if int(ingredient_item['amount']) < 0:
-                raise serializers.ValidationError({
-                    'ingredients': ('Убедитесь, что значение количества '
-                                    'ингредиента больше 0')
-                })
-        data['ingredients'] = ingredients
-        return data
+    def validate_ingredients(self, ingredients):
+        ingredient_ids = [item['ingredient'].id for item in ingredients]
+        if len(ingredient_ids) != len(set(ingredient_ids)):
+            raise serializers.ValidationError(MESSAGE_INGREDIENT_UNIQUE)
+        return ingredients
 
     def create_ingredients(self, ingredients, recipe):
-        """ Метод для создания рецепта с ингридиентами. """
-
-        IngredientRecipe.objects.bulk_create(
+        """ Метод для создания рецепта с ингредиентами. """
+        IngredientRecipe.objects.bulk_create([
             IngredientRecipe(
                 recipe=recipe,
-                ingredient_id=ingredient.get('id'),
-                amount=ingredient.get('amount'),)
-            for ingredient in ingredients
-        )
+                ingredient=ingredient['ingredient'],
+                amount=ingredient['amount']
+            ) for ingredient in ingredients
+        ])
 
     def create(self, validated_data):
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
-        self.create_ingredients(recipe=recipe, ingredients=ingredients)
+        self.create_ingredients(ingredients, recipe)
         return recipe
 
     def update(self, instance, validated_data):
@@ -239,10 +232,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         ingredients = validated_data.pop('ingredients')
         instance.tags.set(tags)
         IngredientRecipe.objects.filter(recipe=instance).delete()
-        super().update(instance, validated_data)
         self.create_ingredients(ingredients, instance)
-        instance.save()
-        return instance
+        return super().update(instance, validated_data)
 
     def to_representation(self, instance):
         request = self.context.get('request')
@@ -315,29 +306,33 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionReadSerializer(UserSerializer):
-    """ Сериализатор для модели User для полей подписок. """
+    """ Сериализатор для вывода подписчиков с
+    информацией о рецептах автора.
+    """
 
     recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.SerializerMethodField(read_only=True)
+    recipes_count = serializers.SerializerMethodField()
 
     class Meta(UserSerializer.Meta):
         fields = UserSerializer.Meta.fields + ('recipes', 'recipes_count')
 
     def get_recipes(self, obj):
+        """ Возвращает список рецептов пользователя,
+        учитывая заданный лимит.
+        """
+
         request = self.context.get('request')
-        limit = request.GET.get('recipes_limit', PAGE_SIZE)
+        limit = request.query_params.get('recipes_limit', PAGE_SIZE)
         try:
-            limit = int(limit)
+            limit = min(int(limit), PAGE_SIZE)
         except ValueError:
-            pass
-        return ShortRecipeSerializer(
-            Recipe.objects.filter(author=obj)[:limit],
-            many=True,
-            context={'request': request},
-        ).data
+            limit = PAGE_SIZE
+
+        recipes = Recipe.objects.filter(author=obj)[:limit]
+        serializer = ShortRecipeSerializer(recipes, many=True,
+                                           context=self.context)
+        return serializer.data
 
     def get_recipes_count(self, obj):
-        """ Подсчет общего числа рецептов,
-        связанных с данным пользователем.
-        """
-        return obj.recipes.count()
+        """ Получает общее количество рецептов, созданных автором. """
+        return Recipe.objects.filter(author=obj).count()
