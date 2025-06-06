@@ -109,6 +109,7 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
             'id',
             'amount'
         )
+
     def validate_amount(self, value):
         if value <= 0:
             raise serializers.ValidationError(MESSAGE_INGREDIENT_AMOUNT)
