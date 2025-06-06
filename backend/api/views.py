@@ -16,7 +16,6 @@ from api.serializers import (
     AvatarSerializer,
     FavoriteSerializer,
     IngredientSerializer,
-    ShortRecipeSerializer,
     RecipeGetSerializer,
     RecipeSerializer,
     ShoppingCartSerializer,
@@ -25,8 +24,12 @@ from api.serializers import (
     TagSerializer,
     UserSerializer,
 )
-from api.mixins import FavoriteMixin, ShoppingCartMixin, AvatarMixin, SubscribeMixin
-from djoser.views import UserViewSet
+from api.mixins import (
+    FavoriteMixin,
+    ShoppingCartMixin,
+    AvatarMixin,
+    SubscribeMixin,
+)
 from recipes.models import (
     Favorite,
     Ingredient,
@@ -72,7 +75,8 @@ class RecipeViewSet(ModelViewSet, FavoriteMixin, ShoppingCartMixin):
     filterset_class = RecipeFilter
 
     def get_queryset(self):
-        return Recipe.objects.prefetch_related('amount_ingredients__ingredient', 'tags').all()
+        return Recipe.objects.prefetch_related(
+            'amount_ingredients__ingredient', 'tags').all()
 
     def perform_create(self, serializer):
         return serializer.save(author=self.request.user)
@@ -100,9 +104,11 @@ class RecipeViewSet(ModelViewSet, FavoriteMixin, ShoppingCartMixin):
             return self.add_to_cart(request, pk)
         return self.remove_from_cart(request, pk)
 
-    @action(detail=False, methods=["get"], permission_classes=(IsAuthenticatedOrReadOnly,))
+    @action(detail=False, methods=["get"],
+            permission_classes=(IsAuthenticatedOrReadOnly,))
     def download_shopping_cart(self, request):
-        ingredient_lst = ShoppingCart.objects.filter(user=request.user).values_list(
+        ingredient_lst = 
+        ShoppingCart.objects.filter(user=request.user).values_list(
             "recipe_id__ingredients__name",
             "recipe_id__ingredients__measurement_unit",
             Sum("recipe_id__ingredients__amount_ingredients__amount"),
@@ -114,8 +120,10 @@ class RecipeViewSet(ModelViewSet, FavoriteMixin, ShoppingCartMixin):
         for ingredient in ingredient_lst:
             shopping_list.append("{} ({}) - {}".format(*ingredient))
 
-        response = HttpResponse("\n".join(shopping_list), content_type="text/plain")
-        response["Content-Disposition"] = 'attachment; filename="shopping_list.txt"'
+        response = HttpResponse("\n".join(shopping_list),
+                                content_type="text/plain")
+        response["Content-Disposition"] = 'attachment;' \
+        'filename="shopping_list.txt"'
         return response
 
     # Настройка миксинов
@@ -125,7 +133,7 @@ class RecipeViewSet(ModelViewSet, FavoriteMixin, ShoppingCartMixin):
     cart_serializer_class = ShoppingCartSerializer
 
 
-class CustomUserViewSet(AvatarMixin, SubscribeMixin, GenericViewSet):
+class CustomUserViewSet(AvatarMixin, SubscribeMixin, viewsets.GenericViewSet):
     """ Вьюсет для модели User. """
 
     queryset = User.objects.all()

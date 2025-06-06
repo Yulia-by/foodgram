@@ -55,8 +55,6 @@ class AvatarSerializer(serializers.ModelSerializer):
 class IngredientSerializer(serializers.ModelSerializer):
     """ Сериализатор для модели Ingredient. """
 
-    #id = serializers.PrimaryKeyRelatedField(read_only=True)
-
     class Meta:
         model = Ingredient
         fields = (
@@ -92,7 +90,6 @@ class IngredientRecipeGetSerializer(serializers.ModelSerializer):
 class IngredientRecipeSerializer(serializers.ModelSerializer):
     """ Сериализатор для модели IngredientRecipe при небезопасных запросах. """
 
-    #id = serializers.IntegerField()
     ingredient_id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
         source='ingredient'
@@ -340,5 +337,7 @@ class SubscriptionReadSerializer(UserSerializer):
         ).data
 
     def get_recipes_count(self, obj):
-        """ Подсчет общего числа рецептов, связанных с данным пользователем. """
+        """ Подсчет общего числа рецептов,
+        связанных с данным пользователем.
+        """
         return obj.recipes.count()

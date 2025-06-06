@@ -1,12 +1,13 @@
 from rest_framework.mixins import CreateModelMixin, DestroyModelMixin
 from rest_framework.response import Response
-from rest_framework import generics, status
-from django.shortcuts import get_object_or_404
+from rest_framework import status
+
 
 class FavoriteMixin(CreateModelMixin, DestroyModelMixin):
     def add_to_favorites(self, request, pk):
         """Добавление рецепта в избранное"""
-        serializer = self.favorite_serializer_class(data={"user": request.user.id, "recipe": pk})
+        serializer = self.favorite_serializer_class(
+            data={"user": request.user.id, "recipe": pk})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -16,12 +17,13 @@ class FavoriteMixin(CreateModelMixin, DestroyModelMixin):
         favorite = self.favorite_model.objects.get(user=request.user, recipe=pk)
         favorite.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
 
 class ShoppingCartMixin(CreateModelMixin, DestroyModelMixin):
     def add_to_cart(self, request, pk):
         """Добавление рецепта в корзину"""
-        serializer = self.cart_serializer_class(data={"user": request.user.id, "recipe": pk})
+        serializer = self.cart_serializer_class(
+            data={"user": request.user.id, "recipe": pk})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -31,7 +33,7 @@ class ShoppingCartMixin(CreateModelMixin, DestroyModelMixin):
         cart_item = self.cart_model.objects.get(user=request.user, recipe=pk)
         cart_item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
 
 class SubscribeMixin(CreateModelMixin, DestroyModelMixin):
     def subscribe(self, request, id):
@@ -46,13 +48,9 @@ class SubscribeMixin(CreateModelMixin, DestroyModelMixin):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_subscription_serializer(self, request, id):
-        # Здесь должен возвращаться конкретный сериализатор для создания подписки
-        # Например, SubscriptionSerializer
         pass
 
     def get_subscription_instance(self, request, id):
-        # Возвращается инстанс конкретной подписки
-        # Например, Subscription.objects.get(user=request.user, author=id)
         pass
 
 
@@ -69,6 +67,4 @@ class AvatarMixin(UpdateModelMixin):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_avatar_serializer(self, request):
-        # Здесь должен возвращаться конкретный сериализатор для загрузки аватарки
-        # Например, AvatarSerializer
         pass
