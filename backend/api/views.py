@@ -92,7 +92,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         url_path='get-link',
         url_name='get-link',
     )
-
     def get_link(self, request, pk=None):
         _ = get_object_or_404(Recipe, pk=pk)
         url = request.build_absolute_uri(f'/recipes/{pk}/')
@@ -171,7 +170,6 @@ class CustomUserViewSet(UserViewSet):
         permission_classes=(IsAuthorOrReadOnly,),
         url_path='me/avatar',
     )
-
     def avatar(self, request, *args, **kwargs):
         serializer = AvatarSerializer(
             instance=request.user,
@@ -191,7 +189,6 @@ class CustomUserViewSet(UserViewSet):
         detail=True,
         methods=['post', 'delete'],
     )
-
     def subscribe(self, request, id):
         if request.method == 'POST':
             serializer = create_object(
@@ -212,13 +209,12 @@ class CustomUserViewSet(UserViewSet):
         detail=False,
         methods=['get'],
     )
-
     def subscriptions(self, request):
         user = request.user
         authors = User.objects.filter(subscribing__user=user)
         paged_queryset = self.paginate_queryset(authors)
         serializer = SubscriptionReadSerializer(
-            paged_queryset, 
+            paged_queryset,
             context={'request': request},
             many=True
         )
