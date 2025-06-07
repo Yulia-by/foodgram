@@ -39,8 +39,6 @@ class RecipeFavoriteMixin:
 class SubscribeMixin:
     def add_subscription(self, request, pk, serializer_class):
         """ Подписаться на автора рецептов. """
-        if request.user.is_anonymous:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
 
         author = get_object_or_404(User, id=pk)
         data = {
@@ -57,8 +55,7 @@ class SubscribeMixin:
 
     def remove_subscription(self, request, pk):
         """ Отписаться от автора рецептов. """
-        if request.user.is_anonymous:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
         subscription = get_object_or_404(Subscription, user=request.user,
                                          author=pk)
         subscription.delete()
