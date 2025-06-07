@@ -31,7 +31,6 @@ from recipes.models import (
     Ingredient,
     Recipe,
     ShoppingCart,
-    Subscription,
     Tag
 )
 from users.models import User
@@ -111,10 +110,10 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
 
     # Загрузка списка продуктов из корзины
     @action(
-            detail=False,
-            methods=['get'],
-            permission_classes=(IsAuthenticated,)
-        )
+        detail=False,
+        methods=['get'],
+        permission_classes=(IsAuthenticated,)
+    )
     def download_shopping_cart(self, request):
         ingredient_lst = ShoppingCart.objects.filter(
             user=request.user
