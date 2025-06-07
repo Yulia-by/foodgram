@@ -174,5 +174,5 @@ class UserViewSet(UserViewSet, SubscribeMixin):
         authors = User.objects.filter(subscribers__user=request.user)
         page = self.paginate_queryset(authors)
         serializer = SubscriptionSerializer(page, many=True,
-                                                context={'request': request})
+                                            context={'request': request})
         return self.get_paginated_response(serializer.data)
