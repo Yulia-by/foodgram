@@ -24,7 +24,7 @@ from api.serializers import (
     TagSerializer,
     UserSerializer,
 )
-from api.utils import SubscribeMixin, RecipeFavoriteMixin
+from api.mixins import SubscribeMixin, RecipeFavoriteMixin
 from djoser.views import UserViewSet
 from recipes.models import (
     Favorite,
@@ -81,7 +81,6 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
             return RecipeGetSerializer
         return RecipeSerializer
 
-    # Действие для получения короткой ссылки на рецепт
     @action(
         detail=True,
         methods=['GET'],
@@ -94,21 +93,18 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
         url = request.build_absolute_uri(f'/recipes/{pk}/')
         return Response({'short-link': url}, status=status.HTTP_200_OK)
 
-    # Избранное — добавить/удалить рецепт
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, pk):
         if request.method == 'POST':
             return self.add_recipe(request, pk, FavoriteSerializer)
         return self.remove_recipe(request, pk, Favorite)
 
-    # Корзина — добавить/удалить рецепт
     @action(detail=True, methods=['post', 'delete'])
     def shopping_cart(self, request, pk):
         if request.method == 'POST':
             return self.add_recipe(request, pk, ShoppingCartSerializer)
         return self.remove_recipe(request, pk, ShoppingCart)
 
-    # Загрузка списка продуктов из корзины
     @action(
         detail=False,
         methods=['get'],
@@ -145,7 +141,6 @@ class UserViewSet(UserViewSet, SubscribeMixin):
             return (IsAuthenticated(),)
         return super().get_permissions()
 
-    # Изменение аватара пользователя
     @action(['PUT'], detail=False, permission_classes=(IsAuthorOrReadOnly,))
     def avatar(self, request, *args, **kwargs):
         serializer = AvatarSerializer(instance=request.user, data=request.data)
@@ -153,14 +148,12 @@ class UserViewSet(UserViewSet, SubscribeMixin):
         serializer.save()
         return Response(serializer.data)
 
-    # Удаление текущего аватара пользователя
     @avatar.mapping.delete
     def delete_avatar(self, request, *args, **kwargs):
         user = self.request.user
         user.avatar.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    # Подписаться на автора рецептов
     @action(detail=True, methods=['post', 'delete'])
     def subscribe(self, request, id):
         if request.method == 'POST':
@@ -168,7 +161,6 @@ class UserViewSet(UserViewSet, SubscribeMixin):
                                          SubscriptionReadSerializer)
         return self.remove_subscription(request, id)
 
-    # Список подписок пользователя
     @action(detail=False, methods=['get'])
     def subscriptions(self, request):
         authors = User.objects.filter(subscribers__user=request.user)
