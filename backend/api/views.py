@@ -16,7 +16,6 @@ from api.serializers import (
     AvatarSerializer,
     FavoriteSerializer,
     IngredientSerializer,
-    ShortRecipeSerializer,
     RecipeGetSerializer,
     RecipeSerializer,
     ShoppingCartSerializer,
@@ -25,7 +24,7 @@ from api.serializers import (
     TagSerializer,
     UserSerializer,
 )
-from api.utils import create_object, delete_object
+from api.utils import SubscribeMixin, RecipeFavoriteMixin
 from djoser.views import UserViewSet
 from recipes.models import (
     Favorite,
@@ -64,8 +63,8 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
 
 
-class RecipeViewSet(viewsets.ModelViewSet):
-    """ Вьюсет для модели Recipe. """
+class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
+    """Вьюсет для модели Recipe."""
 
     queryset = Recipe.objects.select_related(
         'author').prefetch_related('tags', 'amount_ingredients__ingredient')
@@ -79,10 +78,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return serializer.save(author=self.request.user)
 
     def get_serializer_class(self):
-        if self.request.method in permissions.SAFE_METHODS:
+        if self.request.method in ('GET', 'HEAD'):
             return RecipeGetSerializer
         return RecipeSerializer
 
+    # Действие для получения короткой ссылки на рецепт
     @action(
         detail=True,
         methods=['GET'],
@@ -95,42 +95,26 @@ class RecipeViewSet(viewsets.ModelViewSet):
         url = request.build_absolute_uri(f'/recipes/{pk}/')
         return Response({'short-link': url}, status=status.HTTP_200_OK)
 
+    # Избранное — добавить/удалить рецепт
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, pk):
         if request.method == 'POST':
-            serializer = create_object(
-                request,
-                pk,
-                FavoriteSerializer,
-                ShortRecipeSerializer,
-                Recipe
-            )
-            return Response(
-                serializer.data,
-                status=status.HTTP_201_CREATED
-            )
-        delete_object(request, pk, Recipe, Favorite)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            return self.add_recipe(request, pk, FavoriteSerializer)
+        return self.remove_recipe(request, pk, Favorite)
 
+    # Корзина — добавить/удалить рецепт
     @action(detail=True, methods=['post', 'delete'])
     def shopping_cart(self, request, pk):
         if request.method == 'POST':
-            serializer = create_object(
-                request,
-                pk,
-                ShoppingCartSerializer,
-                ShortRecipeSerializer,
-                Recipe
-            )
-            return Response(
-                serializer.data,
-                status=status.HTTP_201_CREATED
-            )
-        delete_object(request, pk, Recipe, ShoppingCart)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            return self.add_recipe(request, pk, ShoppingCartSerializer)
+        return self.remove_recipe(request, pk, ShoppingCart)
 
-    @action(detail=False, methods=['get'],
-            permission_classes=(permissions.IsAuthenticated,))
+    # Загрузка списка продуктов из корзины
+    @action(
+            detail=False,
+            methods=['get'],
+            permission_classes=(IsAuthenticated,)
+        )
     def download_shopping_cart(self, request):
         ingredient_lst = ShoppingCart.objects.filter(
             user=request.user
@@ -149,8 +133,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return response
 
 
-class UserViewSet(UserViewSet):
-    """ Вьюсет для модели User. """
+class UserViewSet(UserViewSet, SubscribeMixin):
+    """Вьюсет для модели User."""
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -162,58 +146,33 @@ class UserViewSet(UserViewSet):
             return (IsAuthenticated(),)
         return super().get_permissions()
 
-    @action(
-        ['put'],
-        detail=False,
-        permission_classes=(IsAuthorOrReadOnly,),
-        url_path='me/avatar',
-    )
+    # Изменение аватара пользователя
+    @action(['PUT'], detail=False, permission_classes=(IsAuthorOrReadOnly,))
     def avatar(self, request, *args, **kwargs):
-        serializer = AvatarSerializer(
-            instance=request.user,
-            data=request.data,
-        )
+        serializer = AvatarSerializer(instance=request.user, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
 
+    # Удаление текущего аватара пользователя
     @avatar.mapping.delete
     def delete_avatar(self, request, *args, **kwargs):
         user = self.request.user
         user.avatar.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(
-        detail=True,
-        methods=['post', 'delete'],
-    )
+    # Подписаться на автора рецептов
+    @action(detail=True, methods=['post', 'delete'])
     def subscribe(self, request, id):
         if request.method == 'POST':
-            serializer = create_object(
-                request,
-                id,
-                SubscriptionSerializer,
-                SubscriptionReadSerializer,
-                User
-            )
-            return Response(
-                serializer.data,
-                status=status.HTTP_201_CREATED
-            )
-        delete_object(request, id, User, Subscription)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            return self.add_subscription(request, id, SubscriptionSerializer)
+        return self.remove_subscription(request, id)
 
-    @action(
-        detail=False,
-        methods=['get'],
-    )
+    # Список подписок пользователя
+    @action(detail=False, methods=['get'])
     def subscriptions(self, request):
-        user = request.user
-        authors = User.objects.filter(subscribing__user=user)
-        paged_queryset = self.paginate_queryset(authors)
-        serializer = SubscriptionReadSerializer(
-            paged_queryset,
-            context={'request': request},
-            many=True
-        )
+        authors = User.objects.filter(subscribers__user=request.user)
+        page = self.paginate_queryset(authors)
+        serializer = SubscriptionReadSerializer(page, many=True,
+                                                context={'request': request})
         return self.get_paginated_response(serializer.data)
