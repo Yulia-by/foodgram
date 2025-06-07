@@ -164,7 +164,8 @@ class UserViewSet(UserViewSet, SubscribeMixin):
     @action(detail=True, methods=['post', 'delete'])
     def subscribe(self, request, id):
         if request.method == 'POST':
-            return self.add_subscription(request, id, SubscriptionSerializer)
+            return self.add_subscription(request, id,
+                                         SubscriptionReadSerializer)
         return self.remove_subscription(request, id)
 
     # Список подписок пользователя
@@ -172,6 +173,6 @@ class UserViewSet(UserViewSet, SubscribeMixin):
     def subscriptions(self, request):
         authors = User.objects.filter(subscribers__user=request.user)
         page = self.paginate_queryset(authors)
-        serializer = SubscriptionReadSerializer(page, many=True,
+        serializer = SubscriptionSerializer(page, many=True,
                                                 context={'request': request})
         return self.get_paginated_response(serializer.data)
