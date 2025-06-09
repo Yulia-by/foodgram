@@ -1,7 +1,6 @@
 from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import HttpResponse
-from django.core.exceptions import NoReverseMatch
 
 from rest_framework import status, viewsets, permissions
 from rest_framework.decorators import action
@@ -96,8 +95,8 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
         try:
             full_original_url = request.build_absolute_uri(
                 reverse('recipes-detail', kwargs={'pk': pk}))
-        except NoReverseMatch:
-            return Response({"error": f"Рецепт с id {pk} не найден."},
+        except Exception as exc:
+            return Response({"error": f"Ошибка формирования URL: {exc}"},
                             status=status.HTTP_404_NOT_FOUND)
 
         # Шаг 3: Создание новой записи в таблице shortlinks с уникальным хешем
