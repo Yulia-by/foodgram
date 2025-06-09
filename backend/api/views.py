@@ -21,6 +21,7 @@ from api.serializers import (
     SubscriptionSerializer,
     TagSerializer,
     UserSerializer,
+    ShortlinkSerializer,
 )
 from api.mixins import SubscribeMixin, RecipeFavoriteMixin
 from djoser.views import UserViewSet
@@ -76,6 +77,7 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
         methods=['GET'],
         detail=False,
         permission_classes=[permissions.AllowAny],
+        serializer_class = ShortlinkSerializer,
         url_path='get-link',
         url_name='get-link',
     )
