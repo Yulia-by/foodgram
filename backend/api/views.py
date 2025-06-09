@@ -1,6 +1,7 @@
 from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import HttpResponse
+from django.core.exceptions import NoReverseMatch
 
 from rest_framework import status, viewsets, permissions
 from rest_framework.decorators import action
@@ -82,19 +83,30 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
         url_name='get-link',
     )
     def get_link(self, request, pk=None):
-        """ Получение короткой ссылки на рецепт. Возвращает короткую ссылку,
-        которая ведет на исходный рецепт.
+        """ Получение короткой ссылки на рецепт.
+        Возвращает короткую ссылку, которая ведет на исходный рецепт.
         """
 
-        # Шаг 2: Формируем полную оригинальную ссылку на рецепт
-        full_original_url = request.build_absolute_uri(
-            reverse('recipes-detail', kwargs={'pk': pk}))
+        # Шаг 1: Проверка наличия идентификатора рецепта
+        if not pk:
+            return Response({"error": "Отсутствует идентификатор рецепта."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        # Шаг 3: Создаем новую запись в таблице shortlinks с уникальным хешем
-        link_mapped = LinkMapped.objects.create(
-            original_url=full_original_url,
-            url_hash=generate_hash(),
-        )
+        # Шаг 2: Формируем полную оригинальную ссылку на рецепт
+        try:
+            full_original_url = request.build_absolute_uri(
+                reverse('recipes-detail', kwargs={'pk': pk}))
+        except NoReverseMatch:
+            return Response({"error": f"Рецепт с id {pk} не найден."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        # Шаг 3: Создание новой записи в таблице shortlinks с уникальным хешем
+        try:
+            link_mapped = LinkMapped.objects.create(
+                original_url=full_original_url, url_hash=generate_hash())
+        except Exception as e:
+            return Response({"error": str(e)},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Шаг 4: Формирование конечной короткой ссылки
         short_link = request.build_absolute_uri(
