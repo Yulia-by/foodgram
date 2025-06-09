@@ -1,6 +1,4 @@
 import uuid
-import string
-from random import choice, randint
 
 from django.db import models
 
@@ -11,8 +9,6 @@ def generate_unique_hash() -> str:
     """Генерирует уникальный идентификатор на основе UUID."""
     return uuid.uuid4().hex[:MAX_HASH_GEN]
 
-
-MAX_HASH_GEN = 8
 
 class LinkModel(models.Model):
     """Модель коротких ссылок."""

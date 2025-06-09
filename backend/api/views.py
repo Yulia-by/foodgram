@@ -88,7 +88,7 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
         if not original_url:
             return Response({'detail': 'Оригинальный URL обязателен.'},
                             status=400)
-        
+
         try:
             link_obj, created = LinkModel.objects.get_or_create(
                 original_url=original_url,
@@ -98,7 +98,7 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
             return Response(
                 {'detail': f'Ошибка при обработке запроса: {str(e)}'},
                 status=500)
-        
+
         # Возвращаем только необходимую информацию
         serializer = self.get_serializer(link_obj)
         return Response(serializer.data,
