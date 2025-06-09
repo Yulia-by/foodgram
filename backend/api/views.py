@@ -74,8 +74,14 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
             return ShortlinkSerializer
         return RecipeSerializer
 
+    @action(
+        methods=['get'],
+        detail=True,
+        url_path='get-link',
+        url_name='get-link',
+    )
     def get_link(self, request, pk=None):
-        """Получение короткой ссылки на рецепт. """
+        """Получение короткой ссылки на рецепт"""
         self.get_object()
         original_url = request.META.get('HTTP_REFERER')
         if original_url is None:
