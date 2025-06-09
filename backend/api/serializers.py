@@ -344,7 +344,7 @@ class SubscriptionReadSerializer(UserSerializer):
     def get_recipes_count(self, obj):
         """ Получает общее количество рецептов, созданных автором. """
         return Recipe.objects.filter(author=obj).count()
-    
+
 
 class ShortlinkSerializer(serializers.ModelSerializer):
     """Сериализатор коротких ссылок. """
