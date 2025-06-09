@@ -70,14 +70,13 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     def get_serializer_class(self):
         if self.request.method in ('GET', 'HEAD'):
             return RecipeGetSerializer
-        elif self.action == 'get_link':
-            return ShortlinkSerializer
         return RecipeSerializer
 
     @action(
         methods=['get'],
         detail=True,
         permission_classes=[permissions.AllowAny],
+        serializer_class = ShortlinkSerializer
         url_path='get-link',
         url_name='get-link',
     )
