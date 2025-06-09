@@ -35,7 +35,6 @@ from recipes.models import (
 )
 from users.models import User
 from shortlink.models import LinkMapped, generate_hash
-from recipes.models import Recipe
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -87,8 +86,6 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
         """ Получение короткой ссылки на рецепт. Возвращает короткую ссылку,
         которая ведет на исходный рецепт.
         """
-        # Шаг 1: Получаем рецепт по указанному PK
-        recipe = get_object_or_404(Recipe, pk=pk)
 
         # Шаг 2: Формируем полную оригинальную ссылку на рецепт
         full_original_url = request.build_absolute_uri(
