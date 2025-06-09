@@ -5,7 +5,7 @@ from django.shortcuts import HttpResponse
 from rest_framework import status, viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.status import HTTP_201_CREATED
+from rest_framework.reverse import reverse
 
 from api.filters import IngredientFilter, RecipeFilter
 from api.permissions import IsAuthorOrReadOnly
@@ -81,28 +81,21 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
         url_path='get-link',
         url_name='get-link',
     )
-    def get_link(self, request, format=None):
-        """Получение короткой ссылки на рецепт."""
-        # Сначала создаем или получаем объект LinkModel
-        original_url = request.GET.get('original_url')
-        if not original_url:
-            return Response({'detail': 'Оригинальный URL обязателен.'},
-                            status=400)
+    def get_link(self, request, pk=None):
+        """Получение короткой ссылки на рецепт"""
+        self.get_object()
+        original_url = request.META.get('HTTP_REFERER')
+        if original_url is None:
+            url = reverse('api:recipe-detail', kwargs={'pk': pk})
+            original_url = request.build_absolute_uri(url)
+        serializer = self.get_serializer(
+            data={'original_url': original_url},
+            context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
-        try:
-            link_obj, created = LinkModel.objects.get_or_create(
-                original_url=original_url,
-                defaults={'url_hash': generate_unique_hash()}
-            )
-        except Exception as e:
-            return Response(
-                {'detail': f'Ошибка при обработке запроса: {str(e)}'},
-                status=500)
-
-        # Возвращаем только необходимую информацию
-        serializer = self.get_serializer(link_obj)
-        return Response(serializer.data,
-                        status=HTTP_201_CREATED if created else 200)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, pk):

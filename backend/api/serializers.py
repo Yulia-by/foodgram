@@ -23,7 +23,7 @@ from recipes.models import (
     Tag,
 )
 from users.models import User
-from shortlink.models import LinkModel
+from shortlink.models import LinkMapped
 
 
 class UserSerializer(UserSerializer):
@@ -347,10 +347,10 @@ class SubscriptionReadSerializer(UserSerializer):
 
 
 class ShortlinkSerializer(serializers.ModelSerializer):
-    """Сериализатор коротких ссылок. """
+    """Сериализатор коротких ссылок"""
 
     class Meta:
-        model = LinkModel
+        model = LinkMapped
         fields = ('original_url',)
         write_only_fields = ('original_url',)
 
@@ -361,7 +361,7 @@ class ShortlinkSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        instance, _ = LinkModel.objects.get_or_create(**validated_data)
+        instance, _ = LinkMapped.objects.get_or_create(**validated_data)
         return instance
 
     def to_representation(self, instance):
