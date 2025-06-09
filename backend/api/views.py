@@ -4,8 +4,6 @@ from django.shortcuts import HttpResponse
 
 from rest_framework import status, viewsets, permissions
 from rest_framework.decorators import action
-from rest_framework.permissions import (IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
@@ -137,7 +135,7 @@ class UserViewSet(UserViewSet, SubscribeMixin):
 
     def get_permissions(self):
         if self.action == 'me':
-            return (IsAuthenticated(),)
+            return (permissions.IsAuthenticated(),)
         return super().get_permissions()
 
     @action(
