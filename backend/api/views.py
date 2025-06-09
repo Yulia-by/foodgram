@@ -3,6 +3,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import HttpResponse
 
 from rest_framework import status, viewsets, permissions
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
@@ -33,6 +34,8 @@ from recipes.models import (
     Tag
 )
 from users.models import User
+from shortlink.models import LinkMapped, generate_hash
+from recipes.models import Recipe
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -70,31 +73,40 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     def get_serializer_class(self):
         if self.request.method in ('GET', 'HEAD'):
             return RecipeGetSerializer
+        elif self.action == 'get_link':
+            return ShortlinkSerializer
         return RecipeSerializer
 
     @action(
         methods=['GET'],
         detail=False,
-        permission_classes=[permissions.AllowAny],
-        serializer_class=ShortlinkSerializer,
         url_path='get-link',
         url_name='get-link',
     )
     def get_link(self, request, pk=None):
-        """Получение короткой ссылки на рецепт"""
-        self.get_object()
-        original_url = request.META.get('HTTP_REFERER')
-        if original_url is None:
-            url = reverse('api:recipe-detail', kwargs={'pk': pk})
-            original_url = request.build_absolute_uri(url)
-        serializer = self.get_serializer(
-            data={'original_url': original_url},
-            context={'request': request},
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        """ Получение короткой ссылки на рецепт. Возвращает короткую ссылку,
+        которая ведет на исходный рецепт.
+        """
+        # Шаг 1: Получаем рецепт по указанному PK
+        recipe = get_object_or_404(Recipe, pk=pk)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # Шаг 2: Формируем полную оригинальную ссылку на рецепт
+        full_original_url = request.build_absolute_uri(
+            reverse('recipes-detail', kwargs={'pk': pk}))
+
+        # Шаг 3: Создаем новую запись в таблице shortlinks с уникальным хешем
+        link_mapped = LinkMapped.objects.create(
+            original_url=full_original_url,
+            url_hash=generate_hash(),
+        )
+
+        # Шаг 4: Формирование конечной короткой ссылки
+        short_link = request.build_absolute_uri(
+            reverse('shortlink:load_url',
+                    kwargs={'url_hash': link_mapped.url_hash}))
+
+        # Шаг 5: Возврат результата
+        return Response({'short-link': short_link}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, pk):
