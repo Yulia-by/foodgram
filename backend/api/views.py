@@ -21,7 +21,6 @@ from api.serializers import (
     SubscriptionSerializer,
     TagSerializer,
     UserSerializer,
-    ShortlinkSerializer,
 )
 from api.mixins import SubscribeMixin, RecipeFavoriteMixin
 from djoser.views import UserViewSet
@@ -71,8 +70,6 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     def get_serializer_class(self):
         if self.request.method in ('GET', 'HEAD'):
             return RecipeGetSerializer
-        elif self.action == 'get_link':
-            return ShortlinkSerializer
         return RecipeSerializer
 
     @action(
