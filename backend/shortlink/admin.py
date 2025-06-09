@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import LinkModel
+from .models import LinkMapped
 
 
-admin.site.register(LinkModel)
+admin.site.register(LinkMapped)
