@@ -1,10 +1,12 @@
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
+from rest_framework.reverse import reverse
 from rest_framework.validators import UniqueTogetherValidator
 from djoser.serializers import UserSerializer
 
 from foodgram.constants import (
     PAGE_SIZE,
+    MIN_AMOUNT,
     MESSAGE_INGREDIENT_AMOUNT,
     COOKING_TIME_MIN,
     MESSAGE_COOKING_TIME,
@@ -21,6 +23,7 @@ from recipes.models import (
     Tag,
 )
 from users.models import User
+from shortlink.models import LinkModel
 
 
 class UserSerializer(UserSerializer):
@@ -111,7 +114,7 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
         )
 
     def validate_amount(self, value):
-        if value <= 0:
+        if value <= MIN_AMOUNT:
             raise serializers.ValidationError(MESSAGE_INGREDIENT_AMOUNT)
         return value
 
@@ -312,16 +315,20 @@ class SubscriptionReadSerializer(UserSerializer):
     """
 
     recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.SerializerMethodField()
+    recipes_count = serializers.IntegerField(source='recipes_count_field')
 
     class Meta(UserSerializer.Meta):
         fields = UserSerializer.Meta.fields + ('recipes', 'recipes_count')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['recipes_count_field'] =\
+            serializers.SerializerMethodField(method_name='get_recipes_count')
 
     def get_recipes(self, obj):
         """ Возвращает список рецептов пользователя,
         учитывая заданный лимит.
         """
-
         request = self.context.get('request')
         limit = request.query_params.get('recipes_limit', PAGE_SIZE)
         try:
@@ -337,3 +344,25 @@ class SubscriptionReadSerializer(UserSerializer):
     def get_recipes_count(self, obj):
         """ Получает общее количество рецептов, созданных автором. """
         return Recipe.objects.filter(author=obj).count()
+    
+
+class ShortlinkSerializer(serializers.ModelSerializer):
+    """Сериализатор коротких ссылок. """
+
+    class Meta:
+        model = LinkModel
+        fields = ('original_url',)
+        write_only_fields = ('original_url',)
+
+    def get_short_link(self, obj):
+        request = self.context.get('request')
+        return request.build_absolute_uri(
+            reverse('shortener:load_url', args=[obj.url_hash])
+        )
+
+    def create(self, validated_data):
+        instance, _ = LinkModel.objects.get_or_create(**validated_data)
+        return instance
+
+    def to_representation(self, instance):
+        return {'short-link': self.get_short_link(instance)}

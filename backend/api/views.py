@@ -5,9 +5,10 @@ from django.shortcuts import HttpResponse
 
 from rest_framework import status, viewsets, permissions
 from rest_framework.decorators import action
-from rest_framework.permissions import (AllowAny, IsAuthenticated,
+from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
+from rest_framework.reverse import reverse
 
 from api.filters import IngredientFilter, RecipeFilter
 from api.permissions import IsAuthorOrReadOnly
@@ -23,6 +24,7 @@ from api.serializers import (
     SubscriptionSerializer,
     TagSerializer,
     UserSerializer,
+    ShortlinkSerializer,
 )
 from api.mixins import SubscribeMixin, RecipeFavoriteMixin
 from djoser.views import UserViewSet
@@ -54,13 +56,6 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = (IngredientFilter,)
     search_fields = ('^name',)
 
-    def get_queryset(self):
-        queryset = Ingredient.objects.all()
-        ingredients = self.request.query_params.get('name')
-        if ingredients is not None:
-            queryset = queryset.filter(name__istartswith=ingredients)
-        return queryset
-
 
 class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     """Вьюсет для модели Recipe."""
@@ -68,8 +63,7 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     queryset = Recipe.objects.select_related(
         'author').prefetch_related('tags', 'amount_ingredients__ingredient')
     pagination_class = CustomLimitPagination
-    permission_classes = (IsAuthorOrReadOnly,
-                          permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
@@ -79,19 +73,25 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     def get_serializer_class(self):
         if self.request.method in ('GET', 'HEAD'):
             return RecipeGetSerializer
+        elif self.action == 'get_link':
+            return ShortlinkSerializer
         return RecipeSerializer
 
-    @action(
-        detail=True,
-        methods=['GET'],
-        permission_classes=[AllowAny],
-        url_path='get-link',
-        url_name='get-link',
-    )
     def get_link(self, request, pk=None):
-        _ = get_object_or_404(Recipe, pk=pk)
-        url = request.build_absolute_uri(f'/recipes/{pk}/')
-        return Response({'short-link': url}, status=status.HTTP_200_OK)
+        """Получение короткой ссылки на рецепт. """
+        self.get_object()
+        original_url = request.META.get('HTTP_REFERER')
+        if original_url is None:
+            url = reverse('api:recipe-detail', kwargs={'pk': pk})
+            original_url = request.build_absolute_uri(url)
+        serializer = self.get_serializer(
+            data={'original_url': original_url},
+            context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, pk):
@@ -141,9 +141,17 @@ class UserViewSet(UserViewSet, SubscribeMixin):
             return (IsAuthenticated(),)
         return super().get_permissions()
 
-    @action(['PUT'], detail=False, permission_classes=(IsAuthorOrReadOnly,))
+    @action(
+        ['put'],
+        detail=False,
+        permission_classes=(IsAuthorOrReadOnly,),
+        url_path='me/avatar',
+    )
     def avatar(self, request, *args, **kwargs):
-        serializer = AvatarSerializer(instance=request.user, data=request.data)
+        serializer = AvatarSerializer(
+            instance=request.user,
+            data=request.data,
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
