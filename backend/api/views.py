@@ -107,7 +107,7 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     @action(
         detail=False,
         methods=['get'],
-        permission_classes=(IsAuthenticated,)
+        permission_classes=(permissions.IsAuthenticated,)
     )
     def download_shopping_cart(self, request):
         ingredient_lst = ShoppingCart.objects.filter(
@@ -133,7 +133,7 @@ class UserViewSet(UserViewSet, SubscribeMixin):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = CustomLimitPagination
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     def get_permissions(self):
         if self.action == 'me':
