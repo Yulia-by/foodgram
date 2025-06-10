@@ -357,7 +357,7 @@ class ShortlinkSerializer(serializers.ModelSerializer):
     def get_short_link(self, obj):
         request = self.context.get('request')
         return request.build_absolute_uri(
-            reverse('shortener:load_url', args=[obj.url_hash])
+            reverse('shortlink:load_url', args=[obj.url_hash])
         )
 
     def create(self, validated_data):
