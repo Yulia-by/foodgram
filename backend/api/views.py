@@ -71,49 +71,31 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     def get_serializer_class(self):
         if self.request.method in ('GET', 'HEAD'):
             return RecipeGetSerializer
+        elif self.action == 'get_link':
+            return ShortlinkSerializer
         return RecipeSerializer
 
     @action(
-        methods=['GET'],
-        detail=False,
-        permission_classes=(permissions.AllowAny,),
-        serializer_class=ShortlinkSerializer,
+        methods=['get'],
+        detail=True,
         url_path='get-link',
         url_name='get-link',
     )
     def get_link(self, request, pk=None):
-        """ Получение короткой ссылки на рецепт.
-        Возвращает короткую ссылку, которая ведет на исходный рецепт.
-        """
+        """Получение короткой ссылки на рецепт"""
+        self.get_object()
+        original_url = request.META.get('HTTP_REFERER')
+        if original_url is None:
+            url = reverse('api:recipe-detail', kwargs={'pk': pk})
+            original_url = request.build_absolute_uri(url)
+        serializer = self.get_serializer(
+            data={'original_url': original_url},
+            context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
-        # Шаг 1: Проверка наличия идентификатора рецепта
-        if not pk:
-            return Response({"error": "Отсутствует идентификатор рецепта."},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        # Шаг 2: Формируем полную оригинальную ссылку на рецепт
-        try:
-            full_original_url = request.build_absolute_uri(
-                reverse('recipes-detail', kwargs={'pk': pk}))
-        except Exception as exc:
-            return Response({"error": f"Ошибка формирования URL: {exc}"},
-                            status=status.HTTP_404_NOT_FOUND)
-
-        # Шаг 3: Создание новой записи в таблице shortlinks с уникальным хешем
-        try:
-            link_mapped = LinkMapped.objects.create(
-                original_url=full_original_url, url_hash=generate_hash())
-        except Exception as e:
-            return Response({"error": str(e)},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        # Шаг 4: Формирование конечной короткой ссылки
-        short_link = request.build_absolute_uri(
-            reverse('shortlink:load_url',
-                    kwargs={'url_hash': link_mapped.url_hash}))
-
-        # Шаг 5: Возврат результата
-        return Response({'short-link': short_link}, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, pk):
