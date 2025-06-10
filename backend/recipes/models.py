@@ -103,15 +103,12 @@ class Recipe(models.Model):
         validators=(MinValueValidator(
             COOKING_TIME_MIN, message=MESSAGE_COOKING_TIME),)
     )
-    pub_date = models.DateTimeField(
-        'Дата и время публикации',
-        auto_now_add=True
-    )
+
 
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
-        ordering = ('-pub_date',)
+        ordering = ('-id',)
         default_related_name = 'recipes'
 
     def __str__(self) -> str:
