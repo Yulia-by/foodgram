@@ -62,16 +62,14 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     """Вьюсет для модели Recipe."""
 
-    queryset = Recipe.objects.select_related(
-        'author').prefetch_related('tags', 'amount_ingredients__ingredient')
+    queryset = Recipe.objects.all()
     pagination_class = CustomLimitPagination
     permission_classes = (IsAdminAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
     def perform_create(self, serializer):
-        instance = serializer.save(author=self.request.user)
-        return instance
+        return serializer.save(author=self.request.user)
 
     def get_serializer_class(self):
         if self.request.method in ('GET', 'HEAD'):
