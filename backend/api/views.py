@@ -65,7 +65,6 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     filterset_class = RecipeFilter
 
     def perform_create(self, serializer):
-    # Сохраняем объект в БД перед возвратом результата
         instance = serializer.save(author=self.request.user)
         return instance
 
