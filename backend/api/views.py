@@ -83,6 +83,7 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     @action(
         methods=['get'],
         detail=True,
+        permission_classes=[AllowAny],
         url_path='get-link',
         url_name='get-link',
     )
