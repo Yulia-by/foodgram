@@ -76,7 +76,7 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     @action(
         methods=['GET'],
         detail=False,
-        permission_classes=[permissions.AllowAny],
+        permission_classes=(permissions.AllowAny,),
         serializer_class=ShortlinkSerializer,
         url_path='get-link',
         url_name='get-link',

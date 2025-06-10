@@ -21,7 +21,7 @@ def generate_hash() -> str:
 
 
 class LinkMapped(models.Model):
-    """Модель коротких ссылок"""
+    """Модель коротких ссылок. """
 
     url_hash = models.CharField(
         max_length=MAX_HASH_LENGTH, default=generate_hash, unique=True
