@@ -104,7 +104,6 @@ class Recipe(models.Model):
             COOKING_TIME_MIN, message=MESSAGE_COOKING_TIME),)
     )
 
-
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
