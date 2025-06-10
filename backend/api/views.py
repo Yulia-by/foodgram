@@ -33,7 +33,6 @@ from recipes.models import (
     Tag
 )
 from users.models import User
-from shortlink.models import LinkMapped, generate_hash
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
