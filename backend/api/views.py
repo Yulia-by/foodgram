@@ -60,7 +60,8 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     queryset = Recipe.objects.select_related(
         'author').prefetch_related('tags', 'amount_ingredients__ingredient')
     pagination_class = CustomLimitPagination
-    permission_classes = (IsAuthorOrReadOnly,)
+    permission_classes = (IsAuthorOrReadOnly,
+                          permissions.IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
