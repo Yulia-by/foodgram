@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
 from api.filters import IngredientFilter, RecipeFilter
-from api.permissions import IsAuthorOrReadOnly
+from api.permissions import IsAdminAuthorOrReadOnly
 from api.pagination import CustomLimitPagination
 from api.serializers import (
     AvatarSerializer,
@@ -41,13 +41,13 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     pagination_class = None
-    permission_classes = (IsAuthorOrReadOnly,)
+    permission_classes = (IsAdminAuthorOrReadOnly,)
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     """ Вьюсет для модели Ingredient. """
 
-    permission_classes = (IsAuthorOrReadOnly,)
+    permission_classes = (permissions.AllowAny,)
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     filter_backends = (IngredientFilter,)
@@ -60,8 +60,7 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     queryset = Recipe.objects.select_related(
         'author').prefetch_related('tags', 'amount_ingredients__ingredient')
     pagination_class = CustomLimitPagination
-    permission_classes = (IsAuthorOrReadOnly,
-                          permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAdminAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
@@ -149,7 +148,7 @@ class UserViewSet(UserViewSet, SubscribeMixin):
     @action(
         ['put'],
         detail=False,
-        permission_classes=(IsAuthorOrReadOnly,),
+        permission_classes=(IsAdminAuthorOrReadOnly,),
         url_path='me/avatar',
     )
     def avatar(self, request, *args, **kwargs):
