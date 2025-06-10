@@ -2,8 +2,13 @@ from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import HttpResponse
 
-from rest_framework import status, viewsets, permissions
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly
+)
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
@@ -47,7 +52,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     """ Вьюсет для модели Ingredient. """
 
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (AllowAny,)
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     filter_backends = (IngredientFilter,)
@@ -112,7 +117,7 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     @action(
         detail=False,
         methods=['get'],
-        permission_classes=(permissions.IsAuthenticated,)
+        permission_classes=(IsAuthenticated,)
     )
     def download_shopping_cart(self, request):
         ingredient_lst = ShoppingCart.objects.filter(
@@ -138,11 +143,11 @@ class UserViewSet(UserViewSet, SubscribeMixin):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = CustomLimitPagination
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def get_permissions(self):
         if self.action == 'me':
-            return (permissions.IsAuthenticated(),)
+            return (IsAuthenticated(),)
         return super().get_permissions()
 
     @action(
