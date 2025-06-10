@@ -23,7 +23,7 @@ from recipes.models import (
     Tag,
 )
 from users.models import User
-from shortlink.models import LinkMapped
+from shortener.models import LinkMapped
 
 
 class UserSerializer(UserSerializer):
