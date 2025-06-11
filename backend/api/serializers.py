@@ -103,13 +103,13 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
 
     ingredient_id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
-        source='ingredient'
+        required=True
     )
 
     class Meta:
         model = IngredientRecipe
         fields = (
-            'id',
+            'ingredient_id',
             'amount'
         )
 
