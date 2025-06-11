@@ -2,7 +2,7 @@ from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import HttpResponse
 
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.permissions import (
     AllowAny,
@@ -72,10 +72,8 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
         return serializer.save(author=self.request.user)
 
     def get_serializer_class(self):
-        if self.request.method in ('GET', 'HEAD'):
+        if self.request.method in permissions.SAFE_METHODS:
             return RecipeGetSerializer
-        elif self.action == 'get_link':
-            return ShortlinkSerializer
         return RecipeSerializer
 
     @action(
