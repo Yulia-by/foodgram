@@ -75,21 +75,8 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
             return ShortenerSerializer
         return RecipeSerializer
 
-    @staticmethod
-    def add_to(serializer_class, request, id):
-        serializer = serializer_class(
-            data={'user': request.user.id, 'recipe': id},
-            context={'request': request},
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    @staticmethod
-    def delete_from(model, request, id):
-        obj = model.objects.filter(user=request.user, recipe__id=id)
-        obj.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def perform_create(self, serializer):
+        return serializer.save(author=self.request.user)
 
     @action(
         methods=['get'],
