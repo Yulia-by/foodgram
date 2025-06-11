@@ -349,7 +349,7 @@ class SubscriptionReadSerializer(UserSerializer):
         return Recipe.objects.filter(author=obj).count()
 
 
-class ShortlinkSerializer(serializers.ModelSerializer):
+class ShortenerSerializer(serializers.ModelSerializer):
     """Сериализатор коротких ссылок"""
 
     class Meta:

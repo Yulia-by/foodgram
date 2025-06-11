@@ -26,6 +26,7 @@ from api.serializers import (
     SubscriptionSerializer,
     TagSerializer,
     UserSerializer,
+    ShortenerSerializer,
 )
 from api.mixins import SubscribeMixin, RecipeFavoriteMixin
 from djoser.views import UserViewSet
@@ -61,28 +62,40 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     """Вьюсет для модели Recipe."""
 
+    queryset = Recipe.objects.all()
     pagination_class = CustomLimitPagination
     permission_classes = (IsAdminAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
-    def get_queryset(self):
-        return (Recipe.objects.prefetch_related(
-                'amount_ingredients__ingredient',
-                'tags').all())
-
-    def perform_create(self, serializer):
-        return serializer.save(author=self.request.user)
-
     def get_serializer_class(self):
         if self.request.method in ('list', 'retrieve'):
             return RecipeGetSerializer
+        elif self.action == 'get_link':
+            return ShortenerSerializer
         return RecipeSerializer
+
+    @staticmethod
+    def add_to(serializer_class, request, id):
+        serializer = serializer_class(
+            data={'user': request.user.id, 'recipe': id},
+            context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @staticmethod
+    def delete_from(model, request, id):
+        obj = model.objects.filter(user=request.user, recipe__id=id)
+        obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         methods=['get'],
         detail=True,
         permission_classes=[AllowAny],
+
         url_path='get-link',
         url_name='get-link',
     )
