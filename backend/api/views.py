@@ -2,7 +2,7 @@ from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import HttpResponse
 
-from rest_framework import status, viewsets, permissions
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (
     AllowAny,
@@ -61,17 +61,21 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     """Вьюсет для модели Recipe."""
 
-    queryset = Recipe.objects.all()
     pagination_class = CustomLimitPagination
     permission_classes = (IsAdminAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
+    def get_queryset(self):
+        return (Recipe.objects.prefetch_related(
+                'amount_ingredients__ingredient',
+                'tags').all())
+
     def perform_create(self, serializer):
         return serializer.save(author=self.request.user)
 
     def get_serializer_class(self):
-        if self.request.method in permissions.SAFE_METHODS:
+        if self.request.method in ('list', 'retrieve'):
             return RecipeGetSerializer
         return RecipeSerializer
 
