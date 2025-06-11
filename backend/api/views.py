@@ -26,7 +26,6 @@ from api.serializers import (
     SubscriptionSerializer,
     TagSerializer,
     UserSerializer,
-    ShortlinkSerializer,
 )
 from api.mixins import SubscribeMixin, RecipeFavoriteMixin
 from djoser.views import UserViewSet
