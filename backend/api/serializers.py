@@ -101,16 +101,15 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
     при небезопасных запросах.
     """
 
-    ingredient_id = serializers.PrimaryKeyRelatedField(
+    id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
-        required=True,
         source='ingredient'
     )
 
     class Meta:
         model = IngredientRecipe
         fields = (
-            'ingredient_id',
+            'id',
             'amount'
         )
 
@@ -209,7 +208,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         return tags
 
     def validate_ingredients(self, ingredients):
-        ingredient_ids = [item['ingredient'].id for item in ingredients]
+        ingredient_ids = [item['id'] for item in ingredients]
         if len(ingredient_ids) != len(set(ingredient_ids)):
             raise serializers.ValidationError(MESSAGE_INGREDIENT_UNIQUE)
         return ingredients
@@ -220,9 +219,9 @@ class RecipeSerializer(serializers.ModelSerializer):
         IngredientRecipe.objects.bulk_create(
             IngredientRecipe(
                 recipe=recipe,
-                ingredient=ingredient['ingredient'],
-                amount=ingredient['amount'])
-            for ingredient in ingredients
+                ingredient_id=ingredient['id'],
+                amount=ingredient['amount']
+            ) for ingredient in ingredients
         )
 
     def create(self, validated_data):
