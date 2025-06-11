@@ -103,7 +103,8 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
 
     ingredient_id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
-        required=True
+        required=True,
+        source='ingredient'
     )
 
     class Meta:
@@ -219,8 +220,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         IngredientRecipe.objects.bulk_create(
             IngredientRecipe(
                 recipe=recipe,
-                ingredient_id=ingredient.get('id'),
-                amount=ingredient.get('amount'),)
+                ingredient=ingredient['ingredient'],
+                amount=ingredient['amount'])
             for ingredient in ingredients
         )
 
@@ -360,7 +361,7 @@ class ShortlinkSerializer(serializers.ModelSerializer):
     def get_short_link(self, obj):
         request = self.context.get('request')
         return request.build_absolute_uri(
-            reverse('shortlink:load_url', args=[obj.url_hash])
+            reverse('shortener:load_url', args=[obj.url_hash])
         )
 
     def create(self, validated_data):
