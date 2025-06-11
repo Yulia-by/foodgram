@@ -215,20 +215,21 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def create_ingredients(self, ingredients, recipe):
         """ Метод для создания рецепта с ингредиентами. """
-        IngredientRecipe.objects.bulk_create([
+
+        IngredientRecipe.objects.bulk_create(
             IngredientRecipe(
                 recipe=recipe,
-                ingredient=ingredient['ingredient'],
-                amount=ingredient['amount']
-            ) for ingredient in ingredients
-        ])
+                ingredient_id=ingredient.get('id'),
+                amount=ingredient.get('amount'),)
+            for ingredient in ingredients
+        )
 
     def create(self, validated_data):
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
-        self.create_ingredients(ingredients, recipe)
+        self.create_ingredients(recipe=recipe, ingredients=ingredients)
         return recipe
 
     def update(self, instance, validated_data):
@@ -236,8 +237,10 @@ class RecipeSerializer(serializers.ModelSerializer):
         ingredients = validated_data.pop('ingredients')
         instance.tags.set(tags)
         IngredientRecipe.objects.filter(recipe=instance).delete()
+        super().update(instance, validated_data)
         self.create_ingredients(ingredients, instance)
-        return super().update(instance, validated_data)
+        instance.save()
+        return instance
 
     def to_representation(self, instance):
         request = self.context.get('request')
