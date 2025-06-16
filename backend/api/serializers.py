@@ -1,17 +1,15 @@
+from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 from rest_framework.validators import UniqueTogetherValidator
 from djoser.serializers import UserSerializer
+from django.core.exceptions import ObjectDoesNotExist
+from django.utils.translation import ugettext_lazy as _
 
 from foodgram.constants import (
     PAGE_SIZE,
-    MIN_AMOUNT,
-    MESSAGE_INGREDIENT_AMOUNT,
     COOKING_TIME_MIN,
-    MESSAGE_COOKING_TIME,
-    MESSAGE_TAGS_UNIQUE,
-    MESSAGE_INGREDIENT_UNIQUE
 )
 from recipes.models import (
     Favorite,
@@ -101,10 +99,8 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
     при небезопасных запросах.
     """
 
-    id = serializers.PrimaryKeyRelatedField(
-        queryset=Ingredient.objects.all(),
-        source='ingredient'
-    )
+    id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
+    amount = serializers.IntegerField(min_value=1)
 
     class Meta:
         model = IngredientRecipe
@@ -112,11 +108,6 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
             'id',
             'amount'
         )
-
-    def validate_amount(self, value):
-        if value <= MIN_AMOUNT:
-            raise serializers.ValidationError(MESSAGE_INGREDIENT_AMOUNT)
-        return value
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -199,39 +190,66 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def validate_cooking_time(self, cooking_time):
         if int(cooking_time) < COOKING_TIME_MIN:
-            raise serializers.ValidationError(MESSAGE_COOKING_TIME)
+            raise serializers.ValidationError(
+                _('Время готовки не может быть меньше %(value)s минут.') % {
+                    'value': COOKING_TIME_MIN})
         return cooking_time
 
-    def validate_tags(self, tags):
-        if len(tags) != len(set(tags)):
-            raise serializers.ValidationError(MESSAGE_TAGS_UNIQUE)
-        return tags
+    def validate(self, data):
+        ingredients = self.initial_data.get('ingredients')
+        if not ingredients:
+            raise serializers.ValidationError(
+                {'ingredients': _(
+                    'Нужен хотя бы один ингредиент для рецепта.')})
 
-    def validate_ingredients(self, ingredients):
-        ingredient_ids = [item['id'] for item in ingredients]
-        if len(ingredient_ids) != len(set(ingredient_ids)):
-            raise serializers.ValidationError(MESSAGE_INGREDIENT_UNIQUE)
-        return ingredients
+        tags = self.initial_data.get('tags')
+        if not tags:
+            raise serializers.ValidationError(_('Не указаны тэги'))
+
+        if len(data['tags']) != len(set(data['tags'])):
+            raise serializers.ValidationError(_('Теги не могут повторяться!'))
+
+        ingredient_list = []
+        for ingredient_item in ingredients:
+            try:
+                ingredient = get_object_or_404(
+                    Ingredient, id=ingredient_item['id'])
+            except ObjectDoesNotExist:
+                raise serializers.ValidationError(_(
+                    'Указанный ингредиент не найден.'))
+
+            if ingredient in ingredient_list:
+                raise serializers.ValidationError(_(
+                    'Ингредиенты должны быть уникальными.'))
+            ingredient_list.append(ingredient)
+
+            if int(ingredient_item['amount']) <= 0:
+                raise serializers.ValidationError({
+                    'ingredients': _(
+                        f'Количество ингредиента "{ingredient.name}" '
+                        'должно быть положительным числом.'
+                    )
+                })
+
+        data['ingredients'] = ingredients
+        return data
 
     def create_ingredients(self, ingredients, recipe):
-        """ Метод для создания рецепта с ингредиентами. """
-
-        IngredientRecipe.objects.bulk_create(
+        IngredientRecipe.objects.bulk_create([
             IngredientRecipe(
                 recipe=recipe,
-                ingredient_id=ingredient.get('id'),
-                amount=ingredient.get('amount'),)
+                ingredient_id=ingredient['id'],
+                amount=ingredient['amount'],
+            )
             for ingredient in ingredients
-        )
+        ])
 
     def create(self, validated_data):
-        print('Validated data:', validated_data)
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
         self.create_ingredients(ingredients, recipe)
-        recipe.save()
         return recipe
 
     def update(self, instance, validated_data):

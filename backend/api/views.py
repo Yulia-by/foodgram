@@ -64,6 +64,7 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
 
     queryset = Recipe.objects.all()
     pagination_class = CustomLimitPagination
+    permission_classes = (IsAdminAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
