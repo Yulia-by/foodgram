@@ -333,10 +333,10 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         ]
 
     def validate_author(self, author):
-        if self.context['request'].user == author:
+        current_user = self.context['request'].user
+        if current_user == author:
             raise serializers.ValidationError(
-                'Нельзя подписаться на самого себя'
-            )
+                'Нельзя подписаться на самого себя')
         return author
 
 
