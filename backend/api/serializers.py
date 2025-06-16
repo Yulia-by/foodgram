@@ -197,11 +197,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
 
-    def validate_cooking_time(self, cooking_time):
-        if int(cooking_time) < COOKING_TIME_MIN:
-            raise serializers.ValidationError(MESSAGE_COOKING_TIME)
-        return cooking_time
-
     def validate_tags(self, tags):
         if len(tags) != len(set(tags)):
             raise serializers.ValidationError(MESSAGE_TAGS_UNIQUE)
