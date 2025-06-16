@@ -23,6 +23,7 @@ class TagAdmin(admin.ModelAdmin):
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'measurement_unit',)
     list_filter = ('name',)
+    search_fields = ('name',)
     empty_value_display = '-пусто-'
 
 
@@ -45,6 +46,7 @@ class RecipeAdmin(admin.ModelAdmin):
         'author',
     )
     list_filter = ('author', 'name', 'tags',)
+    search_fields = ('name', 'author')
     exclude = ('tags',)
     inlines = (IngredientRecipeInline, TagInline,)
     empty_value_display = '-пусто-'
