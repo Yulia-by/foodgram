@@ -332,11 +332,12 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             )
         ]
 
-    def validate(self, data):
-        if data['user'] == data['author']:
+    def validate_author(self, author):
+        if self.context['request'].user == author:
             raise serializers.ValidationError(
-                'Нельзя подписываться на самого себя.')
-        return data
+                'Нельзя подписаться на самого себя'
+            )
+        return author
 
 
 class SubscriptionReadSerializer(UserSerializer):
