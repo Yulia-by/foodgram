@@ -23,7 +23,6 @@ from api.serializers import (
     RecipeSerializer,
     ShoppingCartSerializer,
     SubscriptionReadSerializer,
-    SubscriptionSerializer,
     TagSerializer,
     UserSerializer,
     ShortenerSerializer,
