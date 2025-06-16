@@ -9,7 +9,7 @@ from djoser.serializers import UserSerializer
 from foodgram.constants import (
     PAGE_SIZE,
     COOKING_TIME_MIN,
-    MIN_AMOUNT,
+    INGREDIENT_AMOUNT_MIN,
     MESSAGE_COOKING_TIME,
     MESSAGE_AMOUNT,
     MESSAGE_NOT_TAGS,
@@ -107,7 +107,7 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
     """
 
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
-    amount = serializers.IntegerField(min_value=MIN_AMOUNT)
+    amount = serializers.IntegerField(min_value=INGREDIENT_AMOUNT_MIN)
 
     class Meta:
         model = IngredientRecipe
@@ -227,7 +227,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(MESSAGE_INGREDIENT_UNIQUE)
             ingredient_list.append(ingredient)
 
-            if int(ingredient_item['amount']) < MIN_AMOUNT:
+            if int(ingredient_item['amount']) < INGREDIENT_AMOUNT_MIN:
                 raise serializers.ValidationError({
                     'ingredients': MESSAGE_INGREDIENT_AMOUNT
                 })
