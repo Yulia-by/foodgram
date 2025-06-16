@@ -23,6 +23,7 @@ from api.serializers import (
     RecipeSerializer,
     ShoppingCartSerializer,
     SubscriptionReadSerializer,
+    SubscriptionSerializer,
     TagSerializer,
     UserSerializer,
     ShortenerSerializer,
@@ -173,8 +174,7 @@ class UserViewSet(UserViewSet, SubscribeMixin):
     @action(detail=True, methods=['post', 'delete'])
     def subscribe(self, request, id):
         if request.method == 'POST':
-            return self.add_subscription(request, id,
-                                         SubscriptionReadSerializer)
+            return self.add_subscription(request, id, SubscriptionSerializer)
         return self.remove_subscription(request, id)
 
     @action(detail=False, methods=['get'])
