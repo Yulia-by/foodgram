@@ -20,7 +20,7 @@ MESSAGE_INGREDIENT_AMOUNT = _(
     'Количество ингредиента должно быть положительным числом.')
 MESSAGE_AMOUNT = _('Количество должно быть равно хотя бы одному.')
 INLINE_EXTRA = 0
-MIN_AMOUNT = 1
+INGREDIENT_AMOUNT_MIN = 1
 MIN_NUM = 1
 PAGE_SIZE = 6
 MIN_HASH_GEN = 8
