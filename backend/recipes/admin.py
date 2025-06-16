@@ -16,12 +16,14 @@ from recipes.models import (
 class TagAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug',)
     search_fields = ('name',)
+    empty_value_display = '-пусто-'
 
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'measurement_unit',)
-    list_filter = ('name', )
+    list_filter = ('name',)
+    empty_value_display = '-пусто-'
 
 
 class IngredientRecipeInline(admin.TabularInline):
@@ -45,6 +47,7 @@ class RecipeAdmin(admin.ModelAdmin):
     list_filter = ('author', 'name', 'tags',)
     exclude = ('tags',)
     inlines = (IngredientRecipeInline, TagInline,)
+    empty_value_display = '-пусто-'
 
     def likes(self, obj):
         return Favorite.objects.filter(recipe=obj).count()
