@@ -10,8 +10,6 @@ from recipes.models import Recipe, Subscription, User
 class RecipeFavoriteMixin:
     def add_recipe(self, request, pk, serializer_class):
         """ Добавление рецепта в избранное или корзину. """
-        if request.user.is_anonymous:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
 
         recipe = get_object_or_404(Recipe, id=pk)
         data = {
@@ -28,8 +26,6 @@ class RecipeFavoriteMixin:
 
     def remove_recipe(self, request, pk, model):
         """ Удаление рецепта из избранного или корзины. """
-        if request.user.is_anonymous:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
 
         obj = get_object_or_404(model, user=request.user, recipe=pk)
         obj.delete()
