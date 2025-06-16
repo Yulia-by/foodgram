@@ -45,7 +45,7 @@ class SubscribeMixin:
             'user': request.user.id,
             'author': author.id
         }
-        serializer = serializer_class(data=data)
+        serializer = serializer_class(data=data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(
