@@ -1,15 +1,22 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
-from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 from rest_framework.validators import UniqueTogetherValidator
+from drf_extra_fields.fields import Base64ImageField
 from djoser.serializers import UserSerializer
-from django.core.exceptions import ObjectDoesNotExist
-from django.utils.translation import ugettext_lazy as _
 
 from foodgram.constants import (
     PAGE_SIZE,
     COOKING_TIME_MIN,
+    MIN_AMOUNT,
+    MESSAGE_COOKING_TIME,
+    MESSAGE_AMOUNT,
+    MESSAGE_NOT_TAGS,
+    MESSAGE_TAGS_UNIQUE,
+    INGREDIENT_NOT_FOUND,
+    MESSAGE_INGREDIENT_UNIQUE,
+    MESSAGE_INGREDIENT_AMOUNT
 )
 from recipes.models import (
     Favorite,
@@ -100,7 +107,7 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
     """
 
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
-    amount = serializers.IntegerField(min_value=1)
+    amount = serializers.IntegerField(min_value=MIN_AMOUNT)
 
     class Meta:
         model = IngredientRecipe
@@ -191,7 +198,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     def validate_cooking_time(self, cooking_time):
         if int(cooking_time) < COOKING_TIME_MIN:
             raise serializers.ValidationError(
-                _('Время готовки не может быть меньше %(value)s минут.') % {
+                MESSAGE_COOKING_TIME % {
                     'value': COOKING_TIME_MIN})
         return cooking_time
 
@@ -199,15 +206,14 @@ class RecipeSerializer(serializers.ModelSerializer):
         ingredients = self.initial_data.get('ingredients')
         if not ingredients:
             raise serializers.ValidationError(
-                {'ingredients': _(
-                    'Нужен хотя бы один ингредиент для рецепта.')})
+                {'ingredients': MESSAGE_AMOUNT})
 
         tags = self.initial_data.get('tags')
         if not tags:
-            raise serializers.ValidationError(_('Не указаны тэги'))
+            raise serializers.ValidationError(MESSAGE_NOT_TAGS)
 
         if len(data['tags']) != len(set(data['tags'])):
-            raise serializers.ValidationError(_('Теги не могут повторяться!'))
+            raise serializers.ValidationError(MESSAGE_TAGS_UNIQUE)
 
         ingredient_list = []
         for ingredient_item in ingredients:
@@ -215,20 +221,15 @@ class RecipeSerializer(serializers.ModelSerializer):
                 ingredient = get_object_or_404(
                     Ingredient, id=ingredient_item['id'])
             except ObjectDoesNotExist:
-                raise serializers.ValidationError(_(
-                    'Указанный ингредиент не найден.'))
+                raise serializers.ValidationError(INGREDIENT_NOT_FOUND)
 
             if ingredient in ingredient_list:
-                raise serializers.ValidationError(_(
-                    'Ингредиенты должны быть уникальными.'))
+                raise serializers.ValidationError(MESSAGE_INGREDIENT_UNIQUE)
             ingredient_list.append(ingredient)
 
-            if int(ingredient_item['amount']) <= 0:
+            if int(ingredient_item['amount']) < MIN_AMOUNT:
                 raise serializers.ValidationError({
-                    'ingredients': _(
-                        f'Количество ингредиента "{ingredient.name}" '
-                        'должно быть положительным числом.'
-                    )
+                    'ingredients': MESSAGE_INGREDIENT_AMOUNT
                 })
 
         data['ingredients'] = ingredients
