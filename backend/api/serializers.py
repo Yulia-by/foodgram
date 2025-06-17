@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 from rest_framework.validators import UniqueTogetherValidator
@@ -12,6 +13,7 @@ from foodgram.constants import (
     MESSAGE_AMOUNT,
     MESSAGE_NOT_TAGS,
     MESSAGE_TAGS_UNIQUE,
+    INGREDIENT_NOT_FOUND
 )
 from recipes.models import (
     Favorite,
@@ -110,6 +112,17 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
             'id',
             'amount'
         )
+
+    def to_internal_value(self, data):
+        validated_data = super().to_internal_value(data)
+        try:
+            ingredient = Ingredient.objects.get(id=data['id'])
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError({
+                'id': INGREDIENT_NOT_FOUND.format(id=data['id'])
+            })
+        validated_data['ingredient'] = ingredient
+        return validated_data
 
 
 class TagSerializer(serializers.ModelSerializer):
