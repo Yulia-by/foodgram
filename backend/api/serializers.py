@@ -1,4 +1,3 @@
-from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 from rest_framework.validators import UniqueTogetherValidator
@@ -13,7 +12,6 @@ from foodgram.constants import (
     MESSAGE_AMOUNT,
     MESSAGE_NOT_TAGS,
     MESSAGE_TAGS_UNIQUE,
-    INGREDIENT_NOT_FOUND,
 )
 from recipes.models import (
     Favorite,
