@@ -1,5 +1,4 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 from rest_framework.validators import UniqueTogetherValidator
@@ -15,8 +14,6 @@ from foodgram.constants import (
     MESSAGE_NOT_TAGS,
     MESSAGE_TAGS_UNIQUE,
     INGREDIENT_NOT_FOUND,
-    MESSAGE_INGREDIENT_UNIQUE,
-    MESSAGE_INGREDIENT_AMOUNT
 )
 from recipes.models import (
     Favorite,
@@ -116,11 +113,21 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
             'amount'
         )
 
+    def to_internal_value(self, data):
+        validated_data = super().to_internal_value(data)
+        try:
+            ingredient = Ingredient.objects.get(id=data['id'])
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError({
+                'id': INGREDIENT_NOT_FOUND.format(id=data['id'])
+            })
+        validated_data['ingredient'] = ingredient
+        return validated_data
+
 
 class TagSerializer(serializers.ModelSerializer):
     """ Сериализатор для модели Tag. """
 
-    id = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Tag
@@ -214,25 +221,6 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         if len(data['tags']) != len(set(data['tags'])):
             raise serializers.ValidationError(MESSAGE_TAGS_UNIQUE)
-
-        ingredient_list = []
-        for ingredient_item in ingredients:
-            try:
-                ingredient = get_object_or_404(
-                    Ingredient, id=ingredient_item['id'])
-            except ObjectDoesNotExist:
-                raise serializers.ValidationError(INGREDIENT_NOT_FOUND)
-
-            if ingredient in ingredient_list:
-                raise serializers.ValidationError(MESSAGE_INGREDIENT_UNIQUE)
-            ingredient_list.append(ingredient)
-
-            if int(ingredient_item['amount']) < INGREDIENT_AMOUNT_MIN:
-                raise serializers.ValidationError({
-                    'ingredients': MESSAGE_INGREDIENT_AMOUNT
-                })
-
-        data['ingredients'] = ingredients
         return data
 
     def create_ingredients(self, ingredients, recipe):
@@ -295,7 +283,7 @@ class FavoriteAndShoppingCartSerializerBase(serializers.ModelSerializer):
         recipe = data['recipe']
         if self.Meta.model.objects.filter(user=user, recipe=recipe).exists():
             raise serializers.ValidationError(
-                'Рецепт уже добавлен в избранное.'
+                'Рецепт уже добавлен.'
             )
         return data
 
@@ -346,15 +334,10 @@ class SubscriptionReadSerializer(UserSerializer):
     """
 
     recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.IntegerField(source='recipes_count_field')
+    recipes_count = serializers.IntegerField()
 
     class Meta(UserSerializer.Meta):
         fields = UserSerializer.Meta.fields + ('recipes', 'recipes_count')
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['recipes_count_field'] =\
-            serializers.SerializerMethodField(method_name='get_recipes_count')
 
     def get_recipes(self, obj):
         """ Возвращает список рецептов пользователя,
@@ -371,10 +354,6 @@ class SubscriptionReadSerializer(UserSerializer):
         serializer = ShortRecipeSerializer(recipes, many=True,
                                            context=self.context)
         return serializer.data
-
-    def get_recipes_count(self, obj):
-        """ Получает общее количество рецептов, созданных автором. """
-        return Recipe.objects.filter(author=obj).count()
 
 
 class ShortenerSerializer(serializers.ModelSerializer):

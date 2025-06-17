@@ -15,9 +15,6 @@ MESSAGE_COOKING_TIME = _('Время приготовления не может 
 MESSAGE_TAGS_UNIQUE = _('Теги не могут повторяться!')
 MESSAGE_NOT_TAGS = _('Не указаны тэги')
 INGREDIENT_NOT_FOUND = _('Указанный ингредиент не найден.')
-MESSAGE_INGREDIENT_UNIQUE = _('Ингредиенты должны быть уникальными!')
-MESSAGE_INGREDIENT_AMOUNT = _(
-    'Количество ингредиента должно быть положительным числом.')
 MESSAGE_AMOUNT = _('Количество должно быть равно хотя бы одному.')
 INLINE_EXTRA = 0
 INGREDIENT_AMOUNT_MIN = 1

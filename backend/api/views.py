@@ -1,6 +1,7 @@
-from django.db.models import Sum
+from django.db.models import Count, Sum
+from django.http import HttpResponse
+
 from django_filters.rest_framework import DjangoFilterBackend
-from django.shortcuts import HttpResponse
 
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -12,9 +13,11 @@ from rest_framework.permissions import (
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
+from djoser.views import UserViewSet
+
 from api.filters import IngredientFilter, RecipeFilter
 from api.permissions import IsAdminAuthorOrReadOnly
-from api.pagination import CustomLimitPagination
+from api.pagination import LimitPagination
 from api.serializers import (
     AvatarSerializer,
     FavoriteSerializer,
@@ -29,7 +32,6 @@ from api.serializers import (
     ShortenerSerializer,
 )
 from api.mixins import SubscribeMixin, RecipeFavoriteMixin
-from djoser.views import UserViewSet
 from recipes.models import (
     Favorite,
     Ingredient,
@@ -63,7 +65,7 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
     """Вьюсет для модели Recipe."""
 
     queryset = Recipe.objects.all()
-    pagination_class = CustomLimitPagination
+    pagination_class = LimitPagination
     permission_classes = (IsAdminAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
@@ -132,17 +134,17 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
             shopping_list.append('{} ({}) - {}'.format(*ingredient))
         response = HttpResponse('\n'.join(shopping_list),
                                 content_type='text/plain')
-        response['Content-Disposition'] = 'attachment;' \
-            'filename="shopping_list.txt"'
+        response[
+            'Content-Disposition'] = 'attachment; filename="shopping_list.txt"'
         return response
 
 
 class UserViewSet(UserViewSet, SubscribeMixin):
     """Вьюсет для модели User."""
 
-    queryset = User.objects.all()
+    queryset = User.objects.annotate(recipes_count=Count('recipe_author'))
     serializer_class = UserSerializer
-    pagination_class = CustomLimitPagination
+    pagination_class = LimitPagination
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def get_permissions(self):
