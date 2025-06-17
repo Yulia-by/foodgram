@@ -128,7 +128,6 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
 class TagSerializer(serializers.ModelSerializer):
     """ Сериализатор для модели Tag. """
 
-
     class Meta:
         model = Tag
         fields = (
