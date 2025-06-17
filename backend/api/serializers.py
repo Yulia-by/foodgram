@@ -207,6 +207,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         if len(data['tags']) != len(set(data['tags'])):
             raise serializers.ValidationError(MESSAGE_TAGS_UNIQUE)
+        data['ingredients'] = ingredients
         return data
 
     def create_ingredients(self, ingredients, recipe):
