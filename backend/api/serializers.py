@@ -113,17 +113,6 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
             'amount'
         )
 
-    def to_internal_value(self, data):
-        validated_data = super().to_internal_value(data)
-        try:
-            ingredient = Ingredient.objects.get(id=data['id'])
-        except ObjectDoesNotExist:
-            raise serializers.ValidationError({
-                'id': INGREDIENT_NOT_FOUND.format(id=data['id'])
-            })
-        validated_data['ingredient'] = ingredient
-        return validated_data
-
 
 class TagSerializer(serializers.ModelSerializer):
     """ Сериализатор для модели Tag. """
