@@ -142,7 +142,7 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeFavoriteMixin):
 class UserViewSet(UserViewSet, SubscribeMixin):
     """Вьюсет для модели User."""
 
-    queryset = User.objects.annotate(recipes_count=Count('recipe_author'))
+    queryset = User.objects.annotate(recipes_count=Count('recipes'))
     serializer_class = UserSerializer
     pagination_class = LimitPagination
     permission_classes = (IsAuthenticatedOrReadOnly,)
